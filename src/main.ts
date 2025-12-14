@@ -6,6 +6,7 @@ import { highlight } from "./highligher"
 import { Assembler } from "./lances-engine/assembler"
 import { Simulator } from "./lances-engine/simulator"
 import { registerTable } from "./components/registerTable"
+import { instructionViewer } from "./components/instructionViewer"
 
 const Program = state("")
 const assembly = state(new Uint32Array())
@@ -24,6 +25,7 @@ const loadProgramToMemory = () => {
 
 const simulateRISC = () => {
 	sim = new Simulator();
+	registerStates.value = new Uint32Array(32)
 	setTimeout(()=>{
 	sim.loadProgram(assembly.value)
 	sim.registers.registerOnUpdate((index: number, value: number) => {
@@ -43,9 +45,7 @@ div(
 	p(a("click here", { href: "#" }).on("click", () => isHelperOpen.value = !isHelperOpen.value), () => isHelperOpen.value ? " to hide" : " to show", " assembly refrence")
 	, guideTable().showIf(isHelperOpen)
 	, registerDescription().showIf(isHelperOpen),
-	div().forEvery(assembly, inst => {
-		return div(">>" + inst + "\t\t\t" + inst.toString(2) + "\t\t\t" + inst.toString(16))
-	}),
+		instructionViewer(assembly).showIf(() => assembly.value.length > 0), 
 	div(button("Step").on("click", () => sim.stepForward()))
 	, registerTable(registerStates)
 ).addTo(document.querySelector("#app")!)

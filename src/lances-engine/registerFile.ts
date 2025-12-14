@@ -30,4 +30,5 @@ export class RegisterFile {
   registerOnUpdate(callback:(index: number, value: number) => void):void {
 	  this.onUpdate = callback;
 	} 
+	
 }

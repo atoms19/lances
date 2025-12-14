@@ -1,3 +1,4 @@
+import  { Memory } from "./Memory";
 import { RegisterFile } from "./registerFile";
 
 interface InstructionMeta {
@@ -121,13 +122,13 @@ function decodeInstruction(instruction: number): InstructionMeta {
 export class Simulator {
 	instructionMemory: Uint32Array;
 	pc: number;
-	dataMemory: Uint8Array;
+	dataMemory: Memory;
 	registers: RegisterFile;
 
 	constructor() {
 		this.pc = 0;
 		console.log("Simulator initialized. PC set to 0.");
-		this.dataMemory = new Uint8Array(1024 * 64); //64KB data memory
+		this.dataMemory =new Memory(1024 * 64); //64KB data memory
 		this.registers = new RegisterFile();
 
 	}
@@ -151,6 +152,9 @@ export class Simulator {
 				return (val1 | imm) >>> 0;
 			case "andi":
 				return (val1 & imm) >>> 0;
+			case "sb":{
+			  return this.dataMemory.writeByte(val1+imm!,val2 & 0xFF),0;
+			}
 			default:
 				throw new Error(`Unsupported operation: ${opName}`);
 		}

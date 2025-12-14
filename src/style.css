@@ -28,6 +28,8 @@ button:disabled {
   color: #2e3440;
   max-height: 400px;
   overflow: auto;
+  font-family: 'Fira Code', monospace;
+  font-size: 14px;
   white-space: pre;
 }
 .flowchart{
@@ -45,6 +47,12 @@ button:disabled {
 .codejar-linenumbers {
     mix-blend-mode: initial;
     height: 100%;
+	 font-family: 'Fira Code', monospace;
+		font-size: 14px;
+		line-height: 1;
+		padding: 0.2rem;
+		text-align: center;
+		color: #999;
 }
 
 .codejar-linenumber {
@@ -83,6 +91,8 @@ table {
   max-height:400px;
   overflow:auto;
   color: #2e3440;
+  margin:1rem;
+  display: block;
 }
 
 thead {
