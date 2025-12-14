@@ -1,0 +1,110 @@
+#app {
+	max-width: 900px;
+	margin: auto;
+}
+
+button {
+	padding: 0.5rem 1rem;
+	background-color: #ccbbaa;
+	color: black;
+	border-radius: 0;
+	cursor: pointer;
+}
+
+button:disabled {
+	opacity: 0.75;
+	cursor: not-allowed;
+}
+
+.btn-grid {
+	display: flex;
+	gap: 1rem;
+}
+
+.code-area {
+  margin-top: 2rem;
+  padding:0.2rem;
+   background: #fafafa;
+  color: #2e3440;
+  max-height: 400px;
+  overflow: auto;
+  white-space: pre;
+}
+.flowchart{
+  width:100%;
+  height:auto;
+}
+.codejar-linenumbers-inner-wrap {
+    position: absolute;
+    top: 0px;
+    left: 0px;
+    bottom: 0px;
+    overflow: hidden;
+}
+
+.codejar-linenumbers {
+    mix-blend-mode: initial;
+    height: 100%;
+}
+
+.codejar-linenumber {
+    position: relative;
+    top: 0px;
+}
+/* syntax highlighting for risc-v asm  */
+.tok-comment {
+	color: #616161;
+	font-style: italic;
+}
+.tok-inst {
+	color: #5e3ba4;
+	font-weight: 500;
+}
+.tok-reg {
+	color: #005f87;
+}
+.tok-num {
+	color: #9a4f00;
+}
+.tok-label {
+	color: #7a5c00;
+	font-weight: 500;
+}
+.tok-comment {
+	color: #6a737d;
+	font-style: italic;
+}
+
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  max-height:400px;
+  overflow:auto;
+  color: #2e3440;
+}
+
+thead {
+  background: #f3f4f6;
+  font-weight: 600;
+}
+
+th,
+td {
+  padding: 6px 10px;
+  text-align: left;
+}
+td{
+}
+tbody tr:nth-child(even) {
+  background: #f8f8f8;
+}
+tr td:nth-child(1) {
+	font-family: monospace;
+	width: 200px;
+}
+
+tbody tr:hover {
+  background: #ccbbaa;
+}
