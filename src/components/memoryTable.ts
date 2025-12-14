@@ -1,9 +1,15 @@
-import { table, tr, th, td, tbody,derived,thead } from "dominity";
+import { table, tr, div,input,th, td, tbody,derived,thead,state } from "dominity";
 
 
 export function memoryTable(memoryState,sp,lastChnagedMemory) {
   let c=0;
-	return table(
+  const wordMode = state(true); 
+  let addresses = derived(()=>Array.from(memoryState.value).slice(sp.value,sp.value+100))
+	return div(
+	  // input({type:"checkbox",value:wordMode}).on("change", (e) => {
+	  //  wordMode.value = e.target.checked;
+	  //    }),
+	  table(
 	   thead(
 				  tr(
 					th("address"),
@@ -13,9 +19,9 @@ export function memoryTable(memoryState,sp,lastChnagedMemory) {
 			 )),
 		tbody(
 			
-		).forEvery(derived(()=>Array.from(memoryState.value).slice(sp.value,sp.value+100)), (value, i) => {
+		).forEvery(addresses, (value, i) => {
 		   let addr= i+sp.value;
-			if(addr % 4 !==0) return tr();
+			if(wordMode.value && addr % 4 !==0) return tr();
 			return tr(
 				td(`x${(addr).toString(16).padStart(8, '0')}`),
 				td(() => memoryState.value[i].toString(10)),
@@ -28,5 +34,6 @@ export function memoryTable(memoryState,sp,lastChnagedMemory) {
 
 
 		})
+	)
 	)
 }

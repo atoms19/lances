@@ -122,15 +122,11 @@ export class Simulator {
 			return
 		}
 
-
-
 		let result = this.ALUExecute(decoded.name, val1, val2, decoded.imm!);
 		if (resultDest !== undefined) {
 			this.registers.writeRegister(resultDest, result);
 		}
 			this.pc += 4; // move to next instruction
-
-
 
 	}
 

@@ -37,6 +37,119 @@ and open http://localhost:5173 in your browser
 - Helpful refrence for instructions
 - assembly to binary viewer ( view every instruction in binary/hex/decimal )
 
+## instructions and their implementation stages
+
+### assembly stage
+
+add
+sub
+addi
+andi
+ori
+xori
+lw
+lh
+lb
+lhu
+lbu
+sw
+sh
+sb
+beq
+bne
+blt
+bge
+
+#### Not implemented in assembly stage
+
+J and U type instructions
+* `jal`, `jalr`
+* `auipc`, `lui`
+* `sll`, `srl`, `sra`
+* `slti`, `sltiu`
+* `bltu`, `bgeu`
+
+## dissasmbler stage 
+
+add
+sub
+addi
+xori
+ori
+andi
+lb
+lh
+lw
+lbu
+lhu
+sb
+sh
+sw
+beq
+bne
+blt
+bge
+
+#### Not implemented  in dissasmbler stage
+
+
+* `jal`, `jalr`
+* `auipc`, `lui`
+* `sll`, `srl`, `sra`
+* `slti`, `sltiu`
+* `bltu`, `bgeu`
+
+## execution stage
+
+add
+sub
+addi
+xori
+ori
+andi
+
+lb
+lh
+lw
+
+sb
+sh
+sw
+
+beq
+bne
+blt
+bge
+
+
+#### Not implemented in execution stage
+
+Decoded but NOT Executed in Simulator
+lbu
+lhu
+
+
+lbu
+lhu
+jal
+jalr
+lui
+auipc
+sll
+srl
+sra
+slli
+srli
+srai
+slti
+sltiu
+bltu
+bgeu
+
+## known issues
+- Immediate sign extension bug 
+- Pipe lines not implemented
+- No support for system calls or interrupts
 
 ## Support 
 If you find lances useful, please consider supporting its development by starring the repository or sharing it with others.
