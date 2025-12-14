@@ -1,122 +1,8 @@
-import  { Memory } from "./Memory";
+import { Memory } from "./Memory";
 import { RegisterFile } from "./registerFile";
+import { decodeInstruction, type InstructionMeta } from "./dissasmbler";
+import { currentInstruction } from "../main";
 
-interface InstructionMeta {
-	name: string;
-	type: string;
-	opcode: number;
-	funct3?: number;
-	funct7?: number;
-	imm?: number;
-	rs1?: number;
-	rs2?: number;
-	rd?: number;
-}
-
-function decodeInstruction(instruction: number): InstructionMeta {
-	let opcode = instruction & 0x7F; // bits 0-6
-	let funct7: number;
-	let rs2: number;
-	let rs1: number;
-	let funct3: number;
-	let imm: number;
-	let rd: number;
-	console.log(opcode, opcode.toString(2).padStart(7, '0'));
-	switch (opcode) {
-		case parseInt("0110011", 2): { //R-Type
-			rd = (instruction >> 7) & 0x1F;
-			funct3 = (instruction >> 12) & 0x7;
-			rs1 = (instruction >> 15) & 0x1F;
-			rs2 = (instruction >> 20) & 0x1F;
-			funct7 = (instruction >> 25) & 0x7F;
-			let name = "unknown";
-			if (funct3 === 0x0) {
-				if (funct7 === 0x00) {
-					name = "add";
-				} else if (funct7 === 0x20) {
-					name = "sub";
-				}
-			}
-			return { name: name, type: "R-Type", opcode, funct3, funct7, rs1, rs2, rd };
-		}
-		case parseInt("0010011", 2): { //I-Type
-			rd = (instruction >> 7) & 0x1F;
-			funct3 = (instruction >> 12) & 0x7;
-			rs1 = (instruction >> 15) & 0x1F;
-			imm = (instruction >>> 20) & 0xFFF; //12 bits
-			let name = "unknown";
-			if (funct3 === 0x0) {
-				name = "addi"
-			} else if (funct3 == 0x4) {
-				name = "xori"
-			} else if (funct3 == 0x6) {
-				name = "ori"
-			} else if (funct3 == 0x7) {
-				name = "andi"
-			}
-			return { name, type: "I-Type", opcode, funct3, rs1, imm, rd }
-		}
-		case parseInt("0000011", 2): { // Load instructions (I-Type)
-
-			rd = (instruction >> 7) & 0x1F;
-			funct3 = (instruction >> 12) & 0x7;
-			rs1 = (instruction >> 15) & 0x1F;
-			imm = (instruction >>> 20) & 0xFFF; //12 bits
-			let name = "unknown";
-			if (funct3 === 0x0) {
-				name = "lb"
-			} else if (funct3 == 0x1) {
-				name = "lh"
-			} else if (funct3 == 0x2) {
-				name = "lw"
-			} else if (funct3 == 0x4) {
-				name = "lbu"
-			} else if (funct3 == 0x5) {
-
-				name = "lhu"
-			}
-			return { name, type: "I-Type", opcode, funct3, rs1, imm, rd }
-
-		}
-		case parseInt("0100011", 2): { // S-Type
-		  let imm4_0= (instruction >> 7 ) & 0x1F;
-		  funct3= (instruction >> 12) & 0x7
-		  rs1=(instruction >> 15 ) & 0x1F;
-		  rs2=(instruction >> 20) & 0x1F;
-		  let imm11_5 = (instruction >> 25) & 0x7F
-
-		  imm= (imm11_5 << 5 ) | imm4_0;
-		  let name = "unknown"
-		  if(funct3 == 0x0) name = "sb"
-		  else if( funct3== 0x1 ) name ="sh"
-		  else if(funct3 == 0x2 ) name = "sw"
-
-		  return {name,type:"S-Type",opcode,funct3,rs1,rs2,imm}
-
-		}
-		case parseInt("1100011", 2): { // B-Type
-        let imm11 = (instruction >> 7) & 0x1;
-		  let imm4_1 = (instruction >> 8 )& 0xF;
-		  funct3 =  (instruction >>  12 ) & 0x7
-		  rs1 = (instruction >> 15 ) & 0x1F;
-		  rs2 = (instruction >> 20 ) & 0x1F;
-		  let imm10_5= (instruction >> 25 ) & 0x3F; // 6 bits
-		  let imm12 = (instruction >> 31 ) & 0x1;
-		  imm = imm12 << 12 | imm11 << 11 | imm10_5 <<5 | imm4_1 <<1;
-		  let name = "unknown"
-		  if(funct3 == 0x0) name = "beq"
-		  else if(funct3 == 0x1) name = "bne"
-		  else if(funct3 == 0x4) name = "blt"
-		  else if(funct3 == 0x5) name = "bge"
-
-		  return {name,type:"B-Type",opcode,funct3,rs1,rs2,imm}
-		}
-		default:
-			return { name: "unknown", type: "unknown", opcode: opcode };
-
-	}
-
-}
 
 
 export class Simulator {
@@ -128,9 +14,8 @@ export class Simulator {
 	constructor() {
 		this.pc = 0;
 		console.log("Simulator initialized. PC set to 0.");
-		this.dataMemory =new Memory(1024 * 64); //64KB data memory
+		this.dataMemory = new Memory(1024 * 4); //4KB data memory
 		this.registers = new RegisterFile();
-
 	}
 
 	loadProgram(program: Uint32Array) {
@@ -139,7 +24,7 @@ export class Simulator {
 
 
 	ALUExecute(opName: string, val1: number, val2: number, imm?: number): number {
-	 	switch (opName) {
+		switch (opName) {
 			case "add":
 				return (val1 + val2) >>> 0;
 			case "sub":
@@ -152,30 +37,99 @@ export class Simulator {
 				return (val1 | imm) >>> 0;
 			case "andi":
 				return (val1 & imm) >>> 0;
-			case "sb":{
-			  return this.dataMemory.writeByte(val1+imm!,val2 & 0xFF),0;
+			case "sb": {
+				return this.dataMemory.writeByte(val1 + imm!, val2 & 0xFF), 0;
+			}
+			case "sh": {
+				// storing half word in little endian
+				this.dataMemory.writeByte(val1 + imm!, val2 & 0xFF);
+				this.dataMemory.writeByte(val1 + imm! + 1, (val2 >> 8) & 0xFF);
+				return 0;
+			}
+			case "sw": {
+				// storing word in little endian
+				this.dataMemory.writeByte(val1 + imm!, val2 & 0xFF);
+				this.dataMemory.writeByte(val1 + imm! + 1, (val2 >> 8) & 0xFF);
+				this.dataMemory.writeByte(val1 + imm! + 2, (val2 >> 16) & 0xFF);
+				this.dataMemory.writeByte(val1 + imm! + 3, (val2 >> 24) & 0xFF);
+				return 0;
+			}
+			case "lb": {
+				return this.dataMemory.readByte(val1 + imm!) << 24 >> 24; // sign extend 
+			}
+			case "lh": {
+				//half word is 2 bytes 9
+				// read from val1+imm+1 and val1+imm then join 
+				//first read twp
+				let byte1 = this.dataMemory.readByte(val1 + imm!)
+				let byte2 = this.dataMemory.readByte(val1 + imm! + 1);
+				let halfword = byte2 << 8 | byte1;
+				return halfword << 16 >> 16; // sign extend
+			}
+			case "lw": {
+				//word is 4 bytes
+				let byte1 = this.dataMemory.readByte(val1 + imm!);
+				let byte2 = this.dataMemory.readByte(val1 + imm! + 1);
+				let byte3 = this.dataMemory.readByte(val1 + imm! + 2);
+				let byte4 = this.dataMemory.readByte(val1 + imm! + 3);
+				let word = (byte4 << 24) | (byte3 << 16) | (byte2 << 8) | byte1;
+				return word >>> 0; // unsigned
 			}
 			default:
 				throw new Error(`Unsupported operation: ${opName}`);
 		}
 	}
 
+	decodeBranchedInstruction(decoded: InstructionMeta) {
+		let val1 = this.registers.readRegister(decoded.rs1!);
+		let val2 = this.registers.readRegister(decoded.rs2!);
+		let isBranching = false;
+		switch (decoded.name) {
+			case "beq":
+				isBranching = (val1 === val2);
+				break;
+			case "bne":
+				isBranching = (val1 !== val2);
+				break;
+			case "blt":
+				isBranching = ((val1 | 0) < (val2 | 0));
+				break;
+			case "bge":
+				isBranching = ((val1 | 0) >= (val2 | 0));
+				break;
+		}
+		if (isBranching) {
+			this.pc = this.pc + decoded.imm!; // pc relative
+		}else{
+		  			this.pc +=4;
+		}
+	}
+
+
 	executeInstruction(decoded: InstructionMeta) {
-	  let val1:number,val2:number,resultDest:number;
+		let val1: number, val2: number, resultDest: number;
 		if (decoded.rs1 !== undefined) {
-			 val1 = this.registers.readRegister(decoded.rs1);
+			val1 = this.registers.readRegister(decoded.rs1);
 		}
 		if (decoded.rs2 !== undefined) {
-			 val2 = this.registers.readRegister(decoded.rs2);
+			val2 = this.registers.readRegister(decoded.rs2);
 		}
 		if (decoded.rd !== undefined) {
-		    resultDest = decoded.rd; 
+			resultDest = decoded.rd;
 		}
+	 	if (decoded.type == "B-Type") {
+			this.decodeBranchedInstruction(decoded);
+			return
+		}
+
+
 
 		let result = this.ALUExecute(decoded.name, val1, val2, decoded.imm!);
 		if (resultDest !== undefined) {
 			this.registers.writeRegister(resultDest, result);
 		}
+			this.pc += 4; // move to next instruction
+
 
 
 	}
@@ -183,9 +137,19 @@ export class Simulator {
 	stepForward() {
 		let ins = this.instructionMemory[this.pc >> 2];
 		let decoded = decodeInstruction(ins);
+		if(ins==undefined){
+
+		console.log("End of program reached."); 
+		 currentInstruction.value = {
+			 name:"Program Ended",
+			 type:"",
+			 opcode:0
+		 }
+		 return 
+		}
 		console.log("PC:", this.pc, "Instruction:", ins.toString(16).padStart(8, '0'), decoded);
+		currentInstruction.value = decoded;
 		this.executeInstruction(decoded);
-		this.pc += 4;
 	}
 
 }

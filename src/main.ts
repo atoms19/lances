@@ -1,4 +1,4 @@
-import { div, h1, p, a, button, state, img } from "dominity"
+import { div, h1, p, a, button, state, img,h3 } from "dominity"
 import { CodeJar } from "codejar"
 import { guideTable, registerDescription } from "./components/guideTable"
 import { withLineNumbers } from "codejar-linenumbers"
@@ -6,48 +6,78 @@ import { highlight } from "./highligher"
 import { Assembler } from "./lances-engine/assembler"
 import { Simulator } from "./lances-engine/simulator"
 import { registerTable } from "./components/registerTable"
-import { instructionViewer } from "./components/instructionViewer"
+import { instructionCurrent, instructionViewer } from "./components/instructionViewer"
+import { memoryTable } from "./components/memoryTable"
 
 const Program = state("")
 const assembly = state(new Uint32Array())
 const isHelperOpen = state(false)
+
+export const currentInstruction = state({
+	 name: "",
+	 type: "",
+	 opcode: 0,
+})
 let sim: Simulator;
 let registerStates = state(new Uint32Array(32))
 // const instMemory = new InstructionMemory();
-
+let sp = state(0)
+let memoryStates = state(new Uint8Array(4 * 1024)) // 64KB of memory
 const loadProgramToMemory = () => {
 	let code = Assembler(Program.value)
 	assembly.value = code
 }
-
+let lastChangedRegister=state(-1)
+let lastChnagedMemory=state(-2)
 
 
 
 const simulateRISC = () => {
 	sim = new Simulator();
 	registerStates.value = new Uint32Array(32)
-	setTimeout(()=>{
-	sim.loadProgram(assembly.value)
-	sim.registers.registerOnUpdate((index: number, value: number) => {
-		registerStates.value[index] = value
-		registerStates.value = [...registerStates.value]
-	})
-	},1000)
+	memoryStates.value = new Uint8Array(4 * 1024)
+	lastChangedRegister.value=-1
+	lastChnagedMemory.value=-2
+	setTimeout(() => {
+		sim.loadProgram(assembly.value)
+		sim.registers.registerOnUpdate((index: number, value: number) => {
+			registerStates.value[index] = value
+			sp.value = registerStates.value[2]
+			lastChangedRegister.value=index
+			registerStates.value = [...registerStates.value]
+		})
+
+		sim.dataMemory.registerOnUpdate((address: number, value: number) => {
+			memoryStates.value[address] = value
+			lastChnagedMemory.value=address
+			memoryStates.value = [...memoryStates.value]
+		})
+
+	}, 1000)
 	console.log("Program loaded into instruction memory.")
 }
 
 
-div(
-	h1("Welcome to Lances!"),
-	p("Lances is a RISC V simulator built with TypeScript and Runs in the Browser."),
-	div({ class: "btn-grid" }, button("LOAD PROGRAM").on("click", loadProgramToMemory), button("SIMULATE").on("click", simulateRISC)),
-	codearea(),
-	p(a("click here", { href: "#" }).on("click", () => isHelperOpen.value = !isHelperOpen.value), () => isHelperOpen.value ? " to hide" : " to show", " assembly refrence")
-	, guideTable().showIf(isHelperOpen)
-	, registerDescription().showIf(isHelperOpen),
-		instructionViewer(assembly).showIf(() => assembly.value.length > 0), 
-	div(button("Step").on("click", () => sim.stepForward()))
-	, registerTable(registerStates)
+div({ class: "container" },
+	div(
+	   h3("register view "),
+		registerTable(registerStates, lastChangedRegister),
+		h3("memory view ")
+		, memoryTable(memoryStates, sp,lastChnagedMemory)
+	),
+	div(
+		h1("Welcome to Lances!"),
+		p("Lances is a RISC V simulator built with TypeScript and Runs in the Browser."),
+		div({ class: "btn-grid" }, button("LOAD PROGRAM").on("click", loadProgramToMemory), button("SIMULATE").on("click", simulateRISC)),
+		codearea(),
+		instructionCurrent(currentInstruction),
+		p(a("click here", { href: "#" }).on("click", () => isHelperOpen.value = !isHelperOpen.value), () => isHelperOpen.value ? " to hide" : " to show", " assembly refrence")
+		, guideTable().showIf(isHelperOpen)
+		, registerDescription().showIf(isHelperOpen),
+		instructionViewer(assembly).showIf(() => assembly.value.length > 0),
+
+		div(button("Step").on("click", () => sim.stepForward()))
+	),
 ).addTo(document.querySelector("#app")!)
 
 
@@ -55,7 +85,9 @@ div(
 function codearea() {
 	return div({ class: "code-area dracula" }).withRef((el: HTMLElement) => {
 		let jar = CodeJar(el, withLineNumbers(highlight), { tab: "\t", })
-		setTimeout(() => jar.updateCode("# Write your RISC V code here \n \n \n \n"), 100)
+		setTimeout(() => jar.updateCode(`# Write your RISC V code here \n \n \n \n  addi s1, x0, 102
+ sw s1, 0(x0)
+ lw s3, 0(x0) `), 100)
 		jar.onUpdate(code => Program.value = code)
 	})
 }

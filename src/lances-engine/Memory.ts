@@ -14,6 +14,7 @@ export class Memory {
 		return this.memory[address];
 	 }
 	 writeByte(address:number, value:number):void {
+		console.log("Writing value", value, "to address", address);
 		if(address < 0 || address >= this.memory.length) {
 			throw new Error("Memory write out of bounds");
 		}
@@ -22,6 +23,8 @@ export class Memory {
 			this.onUpdate(address, this.memory[address]);
 		}
 	 }
+
+	 
 	 registerOnUpdate(callback:(address: number, value: number) => void):void {
 		 this.onUpdate = callback;
 	 }
