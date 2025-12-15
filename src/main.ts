@@ -1,4 +1,4 @@
-import { div, h1, p, a, button, state, img,h3 } from "dominity"
+import { div, input, h1, select, p, a, button, state, img, h3, option } from "dominity"
 import { CodeJar } from "codejar"
 import { guideTable, registerDescription } from "./components/guideTable"
 import { withLineNumbers } from "codejar-linenumbers"
@@ -8,15 +8,16 @@ import { Simulator } from "./lances-engine/simulator"
 import { registerTable } from "./components/registerTable"
 import { instructionCurrent, instructionViewer } from "./components/instructionViewer"
 import { memoryTable } from "./components/memoryTable"
+import { dialogBox } from "./components/dialogbox"
 
 const Program = state("")
 const assembly = state(new Uint32Array())
 const isHelperOpen = state(false)
 
 export const currentInstruction = state({
-	 name: "",
-	 type: "",
-	 opcode: 0,
+	name: "",
+	type: "",
+	opcode: 0,
 })
 let sim: Simulator;
 let registerStates = state(new Uint32Array(32))
@@ -27,31 +28,62 @@ const loadProgramToMemory = () => {
 	let code = Assembler(Program.value)
 	assembly.value = code
 }
-let lastChangedRegister=state(-1)
-let lastChnagedMemory=state(-2)
+let lastChangedRegister = state(-1)
+let lastChnagedMemory = state(-2)
+let isEditingRegistor = state(false)
 
+
+const registerToedit = state(0)
+const registerEditDialog = dialogBox({
+	title: "Edit Register",
+	message: "Modify the value of the selected register.",
+	isOpen: isEditingRegistor,
+	component: () => {
+		return div(
+			select(
+				...Array.from({ length: 32 }, (_, i) => i).map(i =>
+					option(`x${i}`, { value: i })
+				)
+			).model(registerToedit),
+			input().on("input", (e: any) => {
+				const val = parseInt(e.target.value)
+				if (!isNaN(val)) {
+					sim.registers.writeRegister(registerToedit.value, val)
+				}
+			})
+		)
+
+	}
+})
 
 
 const simulateRISC = () => {
 	sim = new Simulator();
 	registerStates.value = new Uint32Array(32)
 	memoryStates.value = new Uint8Array(4 * 1024)
-	lastChangedRegister.value=-1
-	lastChnagedMemory.value=-2
+	lastChangedRegister.value = -1
+	lastChnagedMemory.value = -2
+	currentInstruction.value = {
+		name: "",
+		type: "",
+		opcode: 0,
+	}
 	setTimeout(() => {
 		sim.loadProgram(assembly.value)
 		sim.registers.registerOnUpdate((index: number, value: number) => {
 			registerStates.value[index] = value
 			sp.value = registerStates.value[2]
-			lastChangedRegister.value=index
+			lastChangedRegister.value = index
 			registerStates.value = [...registerStates.value]
 		})
 
 		sim.dataMemory.registerOnUpdate((address: number, value: number) => {
 			memoryStates.value[address] = value
-			lastChnagedMemory.value=address
+			lastChnagedMemory.value = address
 			memoryStates.value = [...memoryStates.value]
 		})
+
+
 
 	}, 1000)
 	console.log("Program loaded into instruction memory.")
@@ -60,10 +92,10 @@ const simulateRISC = () => {
 
 div({ class: "container" },
 	div(
-	   h3("register view "),
+		div({class:"flex-btw"},h3("register view "),button("set register",{class:"small"}).on("click", () => isEditingRegistor.value = true)),
 		registerTable(registerStates, lastChangedRegister),
 		h3("memory view ")
-		, memoryTable(memoryStates, sp,lastChnagedMemory)
+		, memoryTable(memoryStates, sp, lastChnagedMemory)
 	),
 	div(
 		h1("Welcome to Lances!"),
@@ -76,8 +108,9 @@ div({ class: "container" },
 		, registerDescription().showIf(isHelperOpen),
 		instructionViewer(assembly).showIf(() => assembly.value.length > 0),
 
-		div(button("Step").on("click", () => sim.stepForward()))
+		div(button("Step").on("click", () => sim.stepForward())),
 	),
+  registerEditDialog
 ).addTo(document.querySelector("#app")!)
 
 

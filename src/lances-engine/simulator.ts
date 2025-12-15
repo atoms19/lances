@@ -41,39 +41,21 @@ export class Simulator {
 				return this.dataMemory.writeByte(val1 + imm!, val2 & 0xFF), 0;
 			}
 			case "sh": {
-				// storing half word in little endian
-				this.dataMemory.writeByte(val1 + imm!, val2 & 0xFF);
-				this.dataMemory.writeByte(val1 + imm! + 1, (val2 >> 8) & 0xFF);
+				this.dataMemory.writeHalf(val1 + imm!, val2 & 0xFFFF);
 				return 0;
 			}
 			case "sw": {
-				// storing word in little endian
-				this.dataMemory.writeByte(val1 + imm!, val2 & 0xFF);
-				this.dataMemory.writeByte(val1 + imm! + 1, (val2 >> 8) & 0xFF);
-				this.dataMemory.writeByte(val1 + imm! + 2, (val2 >> 16) & 0xFF);
-				this.dataMemory.writeByte(val1 + imm! + 3, (val2 >> 24) & 0xFF);
+				this.dataMemory.writeWord(val1 + imm!, val2 >>> 0);
 				return 0;
 			}
 			case "lb": {
 				return this.dataMemory.readByte(val1 + imm!) << 24 >> 24; // sign extend 
 			}
 			case "lh": {
-				//half word is 2 bytes 9
-				// read from val1+imm+1 and val1+imm then join 
-				//first read twp
-				let byte1 = this.dataMemory.readByte(val1 + imm!)
-				let byte2 = this.dataMemory.readByte(val1 + imm! + 1);
-				let halfword = byte2 << 8 | byte1;
-				return halfword << 16 >> 16; // sign extend
+				return this.dataMemory.readHalf(val1 + imm!) << 16 >> 16; // sign extend
 			}
 			case "lw": {
-				//word is 4 bytes
-				let byte1 = this.dataMemory.readByte(val1 + imm!);
-				let byte2 = this.dataMemory.readByte(val1 + imm! + 1);
-				let byte3 = this.dataMemory.readByte(val1 + imm! + 2);
-				let byte4 = this.dataMemory.readByte(val1 + imm! + 3);
-				let word = (byte4 << 24) | (byte3 << 16) | (byte2 << 8) | byte1;
-				return word >>> 0; // unsigned
+			  return this.dataMemory.readWord(val1 + imm!) >>> 0; // unsigned			
 			}
 			default:
 				throw new Error(`Unsupported operation: ${opName}`);
@@ -100,8 +82,8 @@ export class Simulator {
 		}
 		if (isBranching) {
 			this.pc = this.pc + decoded.imm!; // pc relative
-		}else{
-		  			this.pc +=4;
+		} else {
+			this.pc += 4;
 		}
 	}
 
@@ -117,7 +99,7 @@ export class Simulator {
 		if (decoded.rd !== undefined) {
 			resultDest = decoded.rd;
 		}
-	 	if (decoded.type == "B-Type") {
+		if (decoded.type == "B-Type") {
 			this.decodeBranchedInstruction(decoded);
 			return
 		}
@@ -126,22 +108,22 @@ export class Simulator {
 		if (resultDest !== undefined) {
 			this.registers.writeRegister(resultDest, result);
 		}
-			this.pc += 4; // move to next instruction
+		this.pc += 4; // move to next instruction
 
 	}
 
 	stepForward() {
 		let ins = this.instructionMemory[this.pc >> 2];
 		let decoded = decodeInstruction(ins);
-		if(ins==undefined){
+		if (ins == undefined) {
 
-		console.log("End of program reached."); 
-		 currentInstruction.value = {
-			 name:"Program Ended",
-			 type:"",
-			 opcode:0
-		 }
-		 return 
+			console.log("End of program reached.");
+			currentInstruction.value = {
+				name: "Program Ended",
+				type: "",
+				opcode: 0
+			}
+			return
 		}
 		console.log("PC:", this.pc, "Instruction:", ins.toString(16).padStart(8, '0'), decoded);
 		currentInstruction.value = decoded;
