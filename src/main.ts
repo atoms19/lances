@@ -100,7 +100,10 @@ div({ class: "container" },
 	div(
 		h1("Welcome to Lances!"),
 		p("Lances is a RISC V simulator built with TypeScript and Runs in the Browser."),
-		div({ class: "btn-grid" }, button("LOAD PROGRAM").on("click", loadProgramToMemory), button("SIMULATE").on("click", simulateRISC)),
+		div({ class: "btn-grid" }, button("LOAD PROGRAM").on("click", loadProgramToMemory), button("SIMULATE").on("click", simulateRISC)
+
+		,div(button("Step").on("click", () => sim.stepForward())),
+			),
 		codearea(),
 		instructionCurrent(currentInstruction),
 		p(a("click here", { href: "#" }).on("click", () => isHelperOpen.value = !isHelperOpen.value), () => isHelperOpen.value ? " to hide" : " to show", " assembly refrence")
@@ -108,7 +111,6 @@ div({ class: "container" },
 		, registerDescription().showIf(isHelperOpen),
 		instructionViewer(assembly).showIf(() => assembly.value.length > 0),
 
-		div(button("Step").on("click", () => sim.stepForward())),
 	),
   registerEditDialog
 ).addTo(document.querySelector("#app")!)

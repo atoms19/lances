@@ -1,5 +1,6 @@
 #app {
 	margin: auto;
+	font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 	max-width: 1200px;
 }
 
@@ -172,7 +173,11 @@ tbody tr:hover {
 	padding: 1rem;
 	border-radius: 4px;
 	box-shadow: 0 2px 10px rgba(0,0,0,0.2);
-	min-width: 300px;
+	min-width: 400px;
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	align-items: center;
 	max-width: 90%;
 }
 .flex-btw{
@@ -184,4 +189,71 @@ tbody tr:hover {
 .small{
   padding:0.25rem;
   height: 2rem; 
+}
+
+
+:root {
+  --field-bg: #ffffff;
+  --field-border: #d0d7de;
+  --field-border-hover: #b6c0cc;
+  --field-border-focus: #0969da;
+  --field-text: #24292f;
+  --field-placeholder: #6e7781;
+}
+
+/* Base style for both input & select */
+input,
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  height: 36px;
+  padding: 6px 10px;
+
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--field-text);
+
+  background-color: var(--field-bg);
+  border: 1px solid var(--field-border);
+  border-radius: 0px;
+
+  outline: none;
+  box-sizing: border-box;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+/* Placeholder */
+input::placeholder {
+  color: var(--field-placeholder);
+}
+
+/* Hover */
+input:hover,
+select:hover {
+  border-color: var(--field-border-hover);
+}
+
+/* Focus */
+input:focus,
+select:focus {
+  border-color: var(--field-border-focus);
+  box-shadow: 0 0 0 2px rgba(9, 105, 218, 0.15);
+}
+
+/* Disabled */
+input:disabled,
+select:disabled {
+  background-color: #f6f8fa;
+  color: #8c959f;
+  cursor: not-allowed;
+}
+
+/* Select arrow (custom, boxy) */
+select {
+  padding-right: 32px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 20 20'%3E%3Cpath fill='%236e7781' d='M5.5 7l4.5 5 4.5-5z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
 }
