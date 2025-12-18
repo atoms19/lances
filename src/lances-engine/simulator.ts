@@ -29,6 +29,12 @@ export class Simulator {
 				return (val1 + val2) >>> 0;
 			case "sub":
 				return (val1 - val2) >>> 0;
+			case "and":
+					 return (val1 & val2) >>> 0;
+			case "or":
+				return (val1 | val2) >>> 0;
+			case "xor":
+						return (val1 ^ val2) >>> 0;
 			case "addi":
 				return (val1 + imm) >>> 0;
 			case "xori":
@@ -55,8 +61,14 @@ export class Simulator {
 				return this.dataMemory.readHalf(val1 + imm!) << 16 >> 16; // sign extend
 			}
 			case "lw": {
-			  return this.dataMemory.readWord(val1 + imm!) >>> 0; // unsigned			
+			  return this.dataMemory.readWord(val1 + imm!) >>> 0; 
 			}
+			case "lbu":{
+			  return this.dataMemory.readByte(val1 + imm!) & 0xFF;
+			 }
+			 case "lhu":{
+						  return this.dataMemory.readHalf(val1 + imm!) & 0xFFFF;
+		  }
 			default:
 				throw new Error(`Unsupported operation: ${opName}`);
 		}

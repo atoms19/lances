@@ -9,6 +9,7 @@ import { registerTable } from "./components/registerTable"
 import { instructionCurrent, instructionViewer } from "./components/instructionViewer"
 import { memoryTable } from "./components/memoryTable"
 import { dialogBox } from "./components/dialogbox"
+import { navbar } from "./components/navbar"
 
 const Program = state("")
 const assembly = state(new Uint32Array())
@@ -89,7 +90,8 @@ const simulateRISC = () => {
 	console.log("Program loaded into instruction memory.")
 }
 
-
+div(
+navbar(),
 div({ class: "container" },
 	div(
 		div({class:"flex-btw"},h3("register view "),button("set register",{class:"small"}).on("click", () => isEditingRegistor.value = true)),
@@ -113,7 +115,7 @@ div({ class: "container" },
 
 	),
   registerEditDialog
-).addTo(document.querySelector("#app")!)
+)).addTo(document.querySelector("#app")!)
 
 
 
