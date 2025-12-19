@@ -108,6 +108,11 @@ export function decodeInstruction(instruction: number): InstructionMeta {
 
 		  return {name,type:"B-Type",opcode,funct3,rs1,rs2,imm}
 		}
+
+		case parseInt("1101111",2): {
+		      
+			 break;
+		}
 		default:
 			return { name: "unknown", type: "unknown", opcode: opcode };
 

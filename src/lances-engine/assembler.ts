@@ -1,30 +1,30 @@
 function abiRegisterDecoder(register: string) {
 	let registerMap = {
-		"zero": "x0",
-		"ra": "x1",
-		"sp": "x2",
-		"gp": "x3",
-		"tp": "x4",
-		"fp": "x8",
-		"s0": "x8",
-		"s1": "x9",
+		"zero": "0",
+		"ra": "1",
+		"sp": "2",
+		"gp": "3",
+		"tp": "4",
+		"fp": "8",
+		"s0": "8",
+		"s1": "9",
 	}
 	if (register in registerMap) return registerMap[register];
 
-	if (register.startsWith("x")) return register;
+	if (register.startsWith("x")) return register.substring(1);
 	if (register.startsWith("s")) {
-		return "x" + (16 + parseInt(register.substring(1))).toString();
+		return (16 + parseInt(register.substring(1))).toString();
 	}
 	if (register.startsWith("t")) {
 		let tNum = parseInt(register.substring(1));
 		if (tNum >= 3) {
-			return "x" + (28 + (tNum - 3)).toString();
+			return (28 + (tNum - 3)).toString();
 		} else {
-			return "x" + (5 + tNum).toString();
+			return + (5 + tNum).toString();
 		}
 	}
 	if (register.startsWith("a")) {
-		return "x" + (10 + parseInt(register.substring(1))).toString();
+		return (10 + parseInt(register.substring(1))).toString();
 	}
 }
 
@@ -35,6 +35,7 @@ function getFunct3(operation: string): number {
 		case "sub":
 		case "lb":
 		case "sb":
+		case "jalr":
 		case "beq":
 			return 0;
 		case "lh":
@@ -50,7 +51,7 @@ function getFunct3(operation: string): number {
 		case "blt":
 			return parseInt("0x4", 16);
 		case "bge":
-		   return parseInt("0x5",16);
+			return parseInt("0x5", 16);
 		case "andi":
 			return parseInt("0x7", 16);
 		case "ori":
@@ -74,13 +75,11 @@ function getFunct7(operation: string): number {
 
 
 function convertInstructionToBytes(instruction: string): Uint32Array {
-	let parts = instruction.split(" ");
-	parts = parts.map(part => part.trim());
+	let parts: RegExpMatchArray = tokenize(instruction);
 	let rd: number;
 	let rs1: number;
 	let rs2: number;
 	let imm: number;
-	let imm2: number;
 	let opcode: number;
 	let funct3: number;
 	let funct7: number;
@@ -96,9 +95,9 @@ function convertInstructionToBytes(instruction: string): Uint32Array {
 			case "sub":
 				{
 					// R-Type instruction
-					rd = parseInt(abiRegisterDecoder(parts[1].replace(",", "")).replace("x", ""));
-					rs1 = parseInt(abiRegisterDecoder(parts[2].replace(",", "")).replace("x", ""));
-					rs2 = parseInt(abiRegisterDecoder(parts[3].replace(",", "")).replace("x", ""));
+					rd = parseInt(abiRegisterDecoder(parts[1]));
+					rs1 = parseInt(abiRegisterDecoder(parts[2]));
+					rs2 = parseInt(abiRegisterDecoder(parts[3]))
 					opcode = parseInt("0110011", 2);
 					word[0] = funct7 << 25 | rs2 << 20 | rs1 << 15 | funct3 << 12 | rd << 7 | opcode;
 					break
@@ -109,10 +108,12 @@ function convertInstructionToBytes(instruction: string): Uint32Array {
 			case "ori":
 			case "xori":
 				{
+			  console.log(parts) 
 					// I-Type instruction
-					rd = parseInt(abiRegisterDecoder(parts[1].replace(",", "")).replace("x", ""));
-					rs1 = parseInt(abiRegisterDecoder(parts[2].replace(",", "")).replace("x", ""));
-					imm = parseInt(parts[3].replace(",", ""));
+			      console.log(abiRegisterDecoder(parts[1]))	
+					rd = parseInt(abiRegisterDecoder(parts[1]));
+					rs1 = parseInt(abiRegisterDecoder(parts[2]));
+					imm = parseInt(parts[3]);
 					opcode = parseInt("0010011", 2);
 
 					word[0] = imm << 20 | rs1 << 15 | funct3 << 12 | rd << 7 | opcode;
@@ -124,68 +125,108 @@ function convertInstructionToBytes(instruction: string): Uint32Array {
 			case "lhu":
 			case "lbu":
 				{
+
 					// I-Type load instruction
-					rd = parseInt(abiRegisterDecoder(parts[1].replace(",", "")).replace("x", ""));
-					const offsetAndReg = parts[2];
-					const reg = offsetAndReg.substring(offsetAndReg.indexOf('(') + 1, offsetAndReg.indexOf(')'));
-					rs1 = parseInt(abiRegisterDecoder(reg).replace("x", ""));
-					let offset = parseInt(offsetAndReg.substring(0, offsetAndReg.indexOf('(')));
-					imm = offset;
+					rd = parseInt(abiRegisterDecoder(parts[1]));
+					if (parts.length == 3) {
+						rs1 = parseInt(parts[2]);
+						imm = 0;
+					} else if (parts.length == 4) {
+						imm = parseInt(parts[2]);
+						rs1 = parseInt(abiRegisterDecoder(parts[3]));
+					}
+
+
 					opcode = parseInt("0000011", 2);
 					word[0] = imm << 20 | rs1 << 15 | funct3 << 12 | rd << 7 | opcode;
 
+					break;
+				}
+			case "jalr":
+				{
+					rd = parseInt(abiRegisterDecoder(parts[1]));
+					rs1 = parseInt(abiRegisterDecoder(parts[2]));
+					imm = parseInt(parts[3]);
+					opcode = parseInt("1100111", 2);
+
+					word[0] = imm << 20 | rs1 << 15 | funct3 << 12 | rd << 7 | opcode;
 					break;
 				}
 			case "sw":
 			case "sh":
 			case "sb":
 				{
+					let offset = 0;
 					// S-Type store instruction
-					rs2 = parseInt(abiRegisterDecoder(parts[1].replace(",", "")).replace("x", ""));
-					const offsetAndReg = parts[2];
-
-					const reg = offsetAndReg.substring(offsetAndReg.indexOf('(') + 1, offsetAndReg.indexOf(')'));
-					rs1 = parseInt(abiRegisterDecoder(reg).replace("x", ""));
-					let offset = parseInt(offsetAndReg.substring(0, offsetAndReg.indexOf('(')));
+					rs2 = parseInt(abiRegisterDecoder(parts[1]));
+					if (parts.length == 3) {
+						rs1 = parseInt(parts[2]);
+						offset = 0;
+					} else if (parts.length == 4) {
+						offset = parseInt(parts[2]);
+						rs1 = parseInt(abiRegisterDecoder(parts[3]));
+					} 
 					imm = offset;
 					opcode = parseInt("0100011", 2);
 					word[0] = ((imm >> 5) << 25) | (rs2 << 20) | (rs1 << 15) | (funct3 << 12) | ((imm & 0x1F) << 7) | opcode;
 					break;
 				}
-		   case "beq":
-		   case "blt":
+			case "beq":
+			case "blt":
 			case "bge":
-			case "bne":{
-				  // B-Type branch instruction 
-			     rs1= parseInt(abiRegisterDecoder(parts[1].replace(",","")).replace("x",""))
-				  rs2 = parseInt(abiRegisterDecoder(parts[2].replace(",","")).replace("x",""))
-				  imm = parseInt(parts[3])
-				  opcode = parseInt("1100011",2)
-				  const offset= imm >> 1
-				  const imm12 = (offset >> 11) & 0x1
-				  const imm10_5 = (offset >> 5) & 0x3F
-				  const imm4_1 = (offset >> 1) & 0xF
-				  const imm11= (offset >> 10 ) & 0x1
+			case "bne": {
+				// B-Type branch instruction 
+				rs1 = parseInt(abiRegisterDecoder(parts[1]))
+				rs2 = parseInt(abiRegisterDecoder(parts[2]))
+				imm = parseInt(parts[3])
+				opcode = parseInt("1100011", 2)
+				const offset = imm >> 1
+				const imm12 = (offset >> 11) & 0x1
+				const imm10_5 = (offset >> 5) & 0x3F
+				const imm4_1 = (offset >> 1) & 0xF
+				const imm11 = (offset >> 10) & 0x1
 
-				  word[0]= (imm12 << 31) | (imm10_5 << 25) | (rs2 << 20 ) | ( rs1  << 15 ) | (funct3 << 12 ) | (imm4_1 << 8) | (imm11 << 7) | opcode
-				  break;
-			 }
+				word[0] = (imm12 << 31) | (imm10_5 << 25) | (rs2 << 20) | (rs1 << 15) | (funct3 << 12) | (imm4_1 << 8) | (imm11 << 7) | opcode
+				break;
+			}
+			case "jal": {
+				rd = parseInt(abiRegisterDecoder(parts[1]))
+				imm = parseInt(parts[2])
+				opcode = parseInt("1101111", 2)
+				let offset = imm >> 1  //  immediates in risc are 2 bit aligned 
+				let imm10_1 = offset & 0x3FF;
+				let imm11 = (offset >> 10) & 0x1;
+				let imm19_12 = (offset >> 11) & 0xFF;
+				let imm20 = (offset >> 19) & 0x1;
+
+
+				word[0] = (imm20 << 31) | (imm10_1 << 21) | (imm11 << 20) | (imm19_12 << 12) | (rd << 7) | opcode
+				break
+			}
+
+
+
 		}
 	}
 	return word
 }
 
+const tokenize = (line: string) => {
+	return line.match(/-?\w+/g);
+};
+
 
 export function Assembler(instructions: string) {
 	const instructionSet = instructions.split("\n");
+
 	let bytecode: Uint32Array = new Uint32Array(instructionSet.length);
 	let c = 0;
 	for (let instruction of instructionSet) {
 		if (instruction.trim() !== "" && !instruction.startsWith("#")) {
-		  
+
 			const [byteInstruction] = convertInstructionToBytes(instruction.trim());
 			bytecode[c++] = byteInstruction;
 		}
 	}
-	return bytecode.subarray(0,c);
+	return bytecode.subarray(0, c);
 }
