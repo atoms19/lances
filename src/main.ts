@@ -122,9 +122,23 @@ div({ class: "container" },
 function codearea() {
 	return div({ class: "code-area dracula" }).withRef((el: HTMLElement) => {
 		let jar = CodeJar(el, withLineNumbers(highlight), { tab: "\t", })
-		setTimeout(() => jar.updateCode(`# Write your RISC V code here \n \n \n \n  addi s1, x0, 102
- sw s1, 0(x0)
- lw s3, 0(x0) `), 100)
+		setTimeout(() => jar.updateCode(`# Write your RISC V code here \n \n \n \n 
+
+    addi x1, x0, 5      # n = 5
+    addi x2, x0, 1      # result = 1
+
+    addi x4, x0, 0      # acc = 0
+    add  x5, x2, x0     # temp = result
+    add  x6, x1, x0     # counter = n
+
+    add  x4, x4, x5     # acc += temp
+    addi x6, x6, -1     # counter--
+    bne  x6, x0, -8     # repeat inner loop
+
+    add  x2, x4, x0     # result = acc
+    addi x1, x1, -1     # n--
+    bne  x1, x0, -32    # repeat outer loop
+ `), 100)
 		jar.onUpdate(code => Program.value = code)
 	})
 }

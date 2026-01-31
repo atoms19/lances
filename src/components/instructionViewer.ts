@@ -53,7 +53,7 @@ export function instructionCurrent(instruction) {
 
 
 			).css(()=> ({
-				background:(instruction.value.name == "Program Ended" ? '#dba0a2' :'#d9dba0')
+				background:(instruction.value.name == "Program Ended" ? 'var(--currentInstruction)' :'')
 			}))
 		)
 

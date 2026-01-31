@@ -28,6 +28,7 @@ function abiRegisterDecoder(register: string) {
 	}
 }
 
+
 function getFunct3(operation: string): number {
 	switch (operation) {
 		case "add":
@@ -41,21 +42,27 @@ function getFunct3(operation: string): number {
 		case "lh":
 		case "sh":
 		case "bne":
-			return parseInt("0x1", 16);
+		case "slli":
+		case "sll":
+			return 0x1;
 		case "lw":
 		case "sw":
-			return parseInt("0x2", 16);
+			return 0x2;
 		case "lbu":
 		case "lhu":
 		case "xori":
+		case "xor":
 		case "blt":
-			return parseInt("0x4", 16);
+			return 0x4; 
 		case "bge":
-			return parseInt("0x5", 16);
+		case "srl":
+			return 0x5; 
 		case "andi":
-			return parseInt("0x7", 16);
+		case "and":
+			return  0x7;
 		case "ori":
-			return parseInt("0x6", 16);
+		case "or":
+			return 0x6; 
 		default:
 			return 0;
 	}
@@ -64,9 +71,10 @@ function getFunct3(operation: string): number {
 function getFunct7(operation: string): number {
 	switch (operation) {
 		case "add":
-			return parseInt("0x00", 16);
+			return 0x00
 		case "sub":
-			return parseInt("0x20", 16);
+		case "sra":
+			return 0x20;
 		default:
 			return 0;
 	}
@@ -93,6 +101,12 @@ function convertInstructionToBytes(instruction: string): Uint32Array {
 		switch (operation) {
 			case "add":
 			case "sub":
+			case "and":
+			case "or":
+			case "xor":
+		   case "sll":
+		   case "srl":
+			case "sra":
 				{
 					// R-Type instruction
 					rd = parseInt(abiRegisterDecoder(parts[1]));
@@ -107,10 +121,11 @@ function convertInstructionToBytes(instruction: string): Uint32Array {
 			case "andi":
 			case "ori":
 			case "xori":
+			case "slli":
 				{
-			  console.log(parts) 
+					console.log(parts)
 					// I-Type instruction
-			      console.log(abiRegisterDecoder(parts[1]))	
+					console.log(abiRegisterDecoder(parts[1]))
 					rd = parseInt(abiRegisterDecoder(parts[1]));
 					rs1 = parseInt(abiRegisterDecoder(parts[2]));
 					imm = parseInt(parts[3]);
@@ -165,7 +180,7 @@ function convertInstructionToBytes(instruction: string): Uint32Array {
 					} else if (parts.length == 4) {
 						offset = parseInt(parts[2]);
 						rs1 = parseInt(abiRegisterDecoder(parts[3]));
-					} 
+					}
 					imm = offset;
 					opcode = parseInt("0100011", 2);
 					word[0] = ((imm >> 5) << 25) | (rs2 << 20) | (rs1 << 15) | (funct3 << 12) | ((imm & 0x1F) << 7) | opcode;
@@ -181,12 +196,19 @@ function convertInstructionToBytes(instruction: string): Uint32Array {
 				imm = parseInt(parts[3])
 				opcode = parseInt("1100011", 2)
 				const offset = imm >> 1
+
+				imm = (imm << 19) >> 19;
 				const imm12 = (offset >> 11) & 0x1
-				const imm10_5 = (offset >> 5) & 0x3F
-				const imm4_1 = (offset >> 1) & 0xF
+				const imm10_5 = (offset >> 4) & 0x3F
+				const imm4_1 = (offset >> 0) & 0xF
 				const imm11 = (offset >> 10) & 0x1
 
+
 				word[0] = (imm12 << 31) | (imm10_5 << 25) | (rs2 << 20) | (rs1 << 15) | (funct3 << 12) | (imm4_1 << 8) | (imm11 << 7) | opcode
+
+				console.log("branch word:", word[0].toString(2).padStart(32, '0'))
+				console.log("branch imm:", imm.toString(2).padStart(32, '0'))
+
 				break;
 			}
 			case "jal": {
@@ -216,17 +238,58 @@ const tokenize = (line: string) => {
 };
 
 
-export function Assembler(instructions: string) {
-	const instructionSet = instructions.split("\n");
 
+function preAssembler(instructions: string[]): string[] {
+	let LabelMaps = new Map<string, number>()
+	let modified: string[] = []
+	let offset = 0;
+	for (let instruction of instructions) {
+		instruction = instruction.trim();
+		if (instruction === "" || instruction.startsWith("#")) continue;
+		if (!instruction.endsWith(":")) {
+			offset += 4
+			continue;
+		}
+		LabelMaps.set(instruction.slice(0, -1), offset);
+	}
+
+
+	let ioffset = 0;
+	instructions.forEach((instruction, i) => {
+	  instruction = instruction.trim();
+		for (let entry of LabelMaps.keys()) {
+			if (instruction.endsWith(entry) && !instructions.includes(':')) {
+				const regex = new RegExp(`\\b${entry}\\b`, "g");
+				if (regex.test(instruction)) {
+					const offset = ioffset - LabelMaps.get(entry)!;
+					instructions[i] = instruction.replace(regex, offset.toString());
+				}
+			}
+		}
+		if (instruction.trim() !== "" && !instruction.endsWith(":")) {
+			ioffset += 4
+		}
+	})
+
+   
+
+	return instructions;
+
+}
+
+
+export function Assembler(instructions: string) {
+	let instructionSet = instructions.split("\n");
+	instructionSet = preAssembler(instructionSet)
 	let bytecode: Uint32Array = new Uint32Array(instructionSet.length);
 	let c = 0;
 	for (let instruction of instructionSet) {
-		if (instruction.trim() !== "" && !instruction.startsWith("#")) {
-
+		if (instruction.trim() !== "" && !instruction.startsWith("#") && !instruction.includes(':')) {
 			const [byteInstruction] = convertInstructionToBytes(instruction.trim());
 			bytecode[c++] = byteInstruction;
 		}
 	}
+
+
 	return bytecode.subarray(0, c);
 }

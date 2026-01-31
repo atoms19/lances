@@ -35,6 +35,12 @@ export class Simulator {
 				return (val1 | val2) >>> 0;
 			case "xor":
 						return (val1 ^ val2) >>> 0;
+			case "sll":
+			     return val1 << (val2 & 0x1F);
+			case "srl":
+			     return val1 >>> (val2 & 0x1F);
+			case "sra":
+			     return (val1 >> (val2 & 0x1F)) >>> 0;
 			case "addi":
 				return (val1 + imm) >>> 0;
 			case "xori":
@@ -43,6 +49,8 @@ export class Simulator {
 				return (val1 | imm) >>> 0;
 			case "andi":
 				return (val1 & imm) >>> 0;
+			case "slli":
+						return (val1 << (imm! & 0x1F)) >>> 0
 			case "sb": {
 				return this.dataMemory.writeByte(val1 + imm!, val2 & 0xFF), 0;
 			}
@@ -75,6 +83,7 @@ export class Simulator {
 	}
 
 	decodeBranchedInstruction(decoded: InstructionMeta) {
+	  console.log("branching instruction", decoded);
 		let val1 = this.registers.readRegister(decoded.rs1!);
 		let val2 = this.registers.readRegister(decoded.rs2!);
 		let isBranching = false;
@@ -93,14 +102,19 @@ export class Simulator {
 				break;
 		}
 		if (isBranching) {
+		  console.log('Branch taken to', this.pc + decoded.imm!,'isss    ', decoded.imm!);
 			this.pc = this.pc + decoded.imm!; // pc relative
+			return 
 		} else {
+		  console.log('Branch not taken');
 			this.pc += 4;
+			return;
 		}
 	}
 
 
 	executeInstruction(decoded: InstructionMeta) {
+	   console.log("the current line ",this.pc);
 		let val1: number, val2: number, resultDest: number;
 		if (decoded.rs1 !== undefined) {
 			val1 = this.registers.readRegister(decoded.rs1);
@@ -111,7 +125,9 @@ export class Simulator {
 		if (decoded.rd !== undefined) {
 			resultDest = decoded.rd;
 		}
+		console.log("Executing instruction:", decoded.type);
 		if (decoded.type == "B-Type") {
+		  console.log("Executing branch instruction");
 			this.decodeBranchedInstruction(decoded);
 			return
 		}
@@ -120,15 +136,16 @@ export class Simulator {
 		if (resultDest !== undefined) {
 			this.registers.writeRegister(resultDest, result);
 		}
+
 		this.pc += 4; // move to next instruction
 
 	}
 
 	stepForward() {
 		let ins = this.instructionMemory[this.pc >> 2];
+		console.log("INSTRUCTION MEMORY ", this.instructionMemory);
 		let decoded = decodeInstruction(ins);
 		if (ins == undefined) {
-
 			console.log("End of program reached.");
 			currentInstruction.value = {
 				name: "Program Ended",
@@ -143,3 +160,4 @@ export class Simulator {
 	}
 
 }
+

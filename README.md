@@ -43,6 +43,13 @@ and open http://localhost:5173 in your browser
 
 add
 sub
+and
+or 
+xor 
+sll 
+srl 
+sra 
+
 addi
 andi
 ori
@@ -59,15 +66,26 @@ beq
 bne
 blt
 bge
+* `jal`, `jalr`
 
 #### Not implemented in assembly stage
 
 J and U type instructions
-* `jal`, `jalr`
 * `auipc`, `lui`
 * `sll`, `srl`, `sra`
 * `slti`, `sltiu`
 * `bltu`, `bgeu`
+
+
+1) srli srai
+
+2) slt sltu slti sltiu
+
+3) bltu bgeu
+
+4) lui auipc
+
+5) ecall ebreak
 
 ## dissasmbler stage 
 
@@ -153,3 +171,27 @@ bgeu
 
 ## Support 
 If you find lances useful, please consider supporting its development by starring the repository or sharing it with others.
+
+
+
+
+# goals features and more 
+
+lances is built for simplicity compared to other RISC-V simulators
+that runs on the web like webRISC-V 
+i want a simple clean interface that is easy to use and understand
+
+the main goals of lances is to aid learning of RISC-V assembly language and computer architecture concepts
+
+its mostly a logical simulator 
+it doesnt attempt to simulate real hardware at the transistor level or timing accurate level
+its simply not in the scope of this project
+
+- easy to use and learn interface 
+- aid learning of RISC-V assembly language
+- visualize instruction execution 
+- visualize memory and register state
+- step through instructions one at a time
+
+
+

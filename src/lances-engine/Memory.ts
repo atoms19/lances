@@ -1,5 +1,6 @@
 // risc v memory is byte addressable
-// we give 64KB of memory 
+// we give 64KB of memory
+
 
 export class Memory {
 	 memory: Uint8Array;

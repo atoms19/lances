@@ -14,6 +14,9 @@
   --text-black: #000000;
   --button-text: #00000;
 
+  --currentInstructionEnded: #dba0a2;  
+  --currentInstruction:#d9dba0;
+
   /* Borders */
   --border-main: #d0d7de;
   --border-hover: #b6c0cc;
@@ -42,6 +45,7 @@ body.dark {
   --bg-muted: #21262d;
   --bg-hover: #30363d;
   --bg-overlay: rgba(0, 0, 0, 0.6);
+
 
   /* Text */
   --text-main: #e6edf3;
@@ -329,6 +333,7 @@ select {
   align-items: center;
   padding: 1rem 0;
   border-bottom: 1px solid var(--border-soft);
+  text-shadow: 0 1px 2px 1px rgba(0, 0, 0);
 }
 
 .navbar-left,

@@ -22,7 +22,7 @@ export class RegisterFile {
 	 }
 	 if(index === 0) 
 		 return; // x0 is always 0
-	  this.registers[index] = value >>> 0; // Ensure unsigned 32-bit
+	  this.registers[index] = value >>> 0; // ensure unsigned 32-bit
 	  if(this.onUpdate) {
 		  this.onUpdate(index, this.registers[index]);
 	  }
