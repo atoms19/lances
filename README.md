@@ -48,12 +48,16 @@ or
 xor 
 sll 
 srl 
-sra 
+sra
+slt
+sltu
 
 addi
 andi
 ori
 xori
+
+
 lw
 lh
 lb
@@ -79,7 +83,7 @@ J and U type instructions
 
 1) srli srai
 
-2) slt sltu slti sltiu
+2) slti sltiu
 
 3) bltu bgeu
 

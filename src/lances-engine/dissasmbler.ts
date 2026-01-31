@@ -49,8 +49,11 @@ export function decodeInstruction(instruction: number): InstructionMeta {
 				} else if (funct7 === 0x20) {
 					name = "sra";
 				}
+		  }else if (funct3 === 0x2) {
+				name = "slt";
+		  }else if (funct3 === 0x3) {
+				name = "sltu";
 		  }
-
 
 			return { name: name, type: "R-Type", opcode, funct3, funct7, rs1, rs2, rd };
 		}

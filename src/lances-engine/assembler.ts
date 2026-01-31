@@ -47,7 +47,10 @@ function getFunct3(operation: string): number {
 			return 0x1;
 		case "lw":
 		case "sw":
+		case "slt":
 			return 0x2;
+		case "sltu":
+		   return 0x3;
 		case "lbu":
 		case "lhu":
 		case "xori":
@@ -107,6 +110,8 @@ function convertInstructionToBytes(instruction: string): Uint32Array {
 		   case "sll":
 		   case "srl":
 			case "sra":
+			case "slt":
+			case "sltu":
 				{
 					// R-Type instruction
 					rd = parseInt(abiRegisterDecoder(parts[1]));

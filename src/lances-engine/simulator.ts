@@ -41,6 +41,10 @@ export class Simulator {
 			     return val1 >>> (val2 & 0x1F);
 			case "sra":
 			     return (val1 >> (val2 & 0x1F)) >>> 0;
+			case "slt":
+			     return ((val1 | 0) < (val2 | 0)) ? 1 : 0;   // we are doing or 0 to convert to signed
+			case "sltu":
+			     return (val1 < val2) ? 1 : 0; // unsigned comparison
 			case "addi":
 				return (val1 + imm) >>> 0;
 			case "xori":
