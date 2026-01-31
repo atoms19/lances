@@ -54,7 +54,15 @@ export class Simulator {
 			case "andi":
 				return (val1 & imm) >>> 0;
 			case "slli":
-						return (val1 << (imm! & 0x1F)) >>> 0
+				return (val1 << (imm! & 0x1F)) >>> 0;
+			case "srli":
+				return (val1 >>> (imm! & 0x1F)) >>> 0;
+			case "srai":
+				 return (val1 >> (imm! & 0x1F)) >>> 0;
+			case "slti":
+			     return ((val1 | 0) < (imm! | 0)) ? 1 : 0;
+			case "sltiu":
+			     return (val1 < imm!) ? 1 : 0;
 			case "sb": {
 				return this.dataMemory.writeByte(val1 + imm!, val2 & 0xFF), 0;
 			}
@@ -104,6 +112,12 @@ export class Simulator {
 			case "bge":
 				isBranching = ((val1 | 0) >= (val2 | 0));
 				break;
+		  case "bltu":
+			  isBranching = (val1 < val2);
+			  break;
+		  case "bgeu":
+			  isBranching = (val1 >= val2);
+			  break;
 		}
 		if (isBranching) {
 		  console.log('Branch taken to', this.pc + decoded.imm!,'isss    ', decoded.imm!);
@@ -115,6 +129,16 @@ export class Simulator {
 			return;
 		}
 	}
+
+	executeJAL(decoded:InstructionMeta){
+	   this.registers.writeRegister( decoded.rd!, this.pc + 4);
+	   this.pc += decoded.imm!;
+	}
+	executeJALR(decoded:InstructionMeta){
+	   this.registers.writeRegister( decoded.rd!, this.pc + 4);
+		this.pc = ( this.registers.readRegister( decoded.rs1! ) + decoded.imm! ) & ~1;
+	 }
+   
 
 
 	executeInstruction(decoded: InstructionMeta) {
@@ -134,6 +158,14 @@ export class Simulator {
 		  console.log("Executing branch instruction");
 			this.decodeBranchedInstruction(decoded);
 			return
+		}
+		if(decoded.type == "J-Type"){
+         this.executeJAL(decoded);
+			return 
+		}
+		if(decoded.type == "I-Type" && decoded.name == "jalr"){
+		  this.executeJALR(decoded);
+		  return
 		}
 
 		let result = this.ALUExecute(decoded.name, val1, val2, decoded.imm!);

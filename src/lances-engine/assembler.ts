@@ -48,8 +48,10 @@ function getFunct3(operation: string): number {
 		case "lw":
 		case "sw":
 		case "slt":
+		case "slti":
 			return 0x2;
 		case "sltu":
+		case "sltiu":
 		   return 0x3;
 		case "lbu":
 		case "lhu":
@@ -59,12 +61,17 @@ function getFunct3(operation: string): number {
 			return 0x4; 
 		case "bge":
 		case "srl":
+		case "srli":
+		case "srai":
+		case "sra":
 			return 0x5; 
 		case "andi":
 		case "and":
+		case "bgeu":
 			return  0x7;
 		case "ori":
 		case "or":
+		case "bltu":
 			return 0x6; 
 		default:
 			return 0;
@@ -77,6 +84,7 @@ function getFunct7(operation: string): number {
 			return 0x00
 		case "sub":
 		case "sra":
+		case "srai":
 			return 0x20;
 		default:
 			return 0;
@@ -127,6 +135,10 @@ function convertInstructionToBytes(instruction: string): Uint32Array {
 			case "ori":
 			case "xori":
 			case "slli":
+			case "srli":
+			case "srai":
+			case "slti":
+			case "sltiu":
 				{
 					console.log(parts)
 					// I-Type instruction
@@ -194,6 +206,8 @@ function convertInstructionToBytes(instruction: string): Uint32Array {
 			case "beq":
 			case "blt":
 			case "bge":
+			case "bgeu":
+			case "bltu":
 			case "bne": {
 				// B-Type branch instruction 
 				rs1 = parseInt(abiRegisterDecoder(parts[1]))
@@ -225,6 +239,7 @@ function convertInstructionToBytes(instruction: string): Uint32Array {
 				let imm11 = (offset >> 10) & 0x1;
 				let imm19_12 = (offset >> 11) & 0xFF;
 				let imm20 = (offset >> 19) & 0x1;
+
 
 
 				word[0] = (imm20 << 31) | (imm10_1 << 21) | (imm11 << 20) | (imm19_12 << 12) | (rd << 7) | opcode
@@ -283,9 +298,50 @@ function preAssembler(instructions: string[]): string[] {
 }
 
 
+
+
+function epreAssembler(instructions: string[]): string[] {
+    const labelMap = new Map<string, number>();
+
+    // ---------- PASS 1: collect labels (BYTE PC) ----------
+    let pc = 0;
+    for (const line of instructions) {
+        const inst = line.trim();
+        if (inst === "" || inst.startsWith("#")) continue;
+
+        if (inst.endsWith(":")) {
+            labelMap.set(inst.slice(0, -1), pc);
+        } else {
+            pc += 4; // 4 bytes per instruction
+        }
+    }
+
+    // ---------- PASS 2: replace labels ----------
+    pc = 0;
+    return instructions.map((line) => {
+        let inst = line.trim();
+        if (inst === "" || inst.startsWith("#") || inst.endsWith(":")) {
+            return line;
+        }
+
+        for (const [label, labelPC] of labelMap) {
+            const regex = new RegExp(`\\b${label}\\b`);
+            if (regex.test(inst)) {
+                const offsetBytes = labelPC - pc;
+                const imm = offsetBytes; // B-type rule
+                inst = inst.replace(regex, imm.toString());
+            }
+        }
+
+        pc += 4;
+        return inst;
+    });
+}
+
+
 export function Assembler(instructions: string) {
 	let instructionSet = instructions.split("\n");
-	instructionSet = preAssembler(instructionSet)
+	instructionSet = epreAssembler(instructionSet)
 	let bytecode: Uint32Array = new Uint32Array(instructionSet.length);
 	let c = 0;
 	for (let instruction of instructionSet) {

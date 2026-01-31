@@ -80,16 +80,10 @@ J and U type instructions
 * `slti`, `sltiu`
 * `bltu`, `bgeu`
 
+1) jal jalr
+2) lui auipc
 
-1) srli srai
-
-2) slti sltiu
-
-3) bltu bgeu
-
-4) lui auipc
-
-5) ecall ebreak
+3) ecall ebreak
 
 ## dissasmbler stage 
 

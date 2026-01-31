@@ -54,13 +54,16 @@ export function decodeInstruction(instruction: number): InstructionMeta {
 		  }else if (funct3 === 0x3) {
 				name = "sltu";
 		  }
-
+		 
 			return { name: name, type: "R-Type", opcode, funct3, funct7, rs1, rs2, rd };
 		}
+
+		case parseInt("1100111", 2):  // I-Type jalr
 		case parseInt("0010011", 2): { //I-Type
 			rd = (instruction >>> 7) & 0x1F;
 			funct3 = (instruction >>> 12) & 0x7;
 			rs1 = (instruction >>> 15) & 0x1F;
+			funct7 = (instruction >>> 25) & 0x7F;
 			imm = (instruction >>> 20) & 0xFFF; //12 bits
 
 				imm = (imm << 20) >> 20; // sign extension
@@ -75,7 +78,22 @@ export function decodeInstruction(instruction: number): InstructionMeta {
 				name = "andi"
 			}else if (funct3 == 0x1) {
 						name = "slli"
-			}
+			}else if (funct3 == 0x5) {
+					 if (funct7 === 0x00) {
+						 name = "srli"
+					 }
+					 else if (funct7 === 0x20) {
+						 name = "srai"
+					 }
+			}else if (funct3 == 0x2) {
+			   name = "slti"
+		   }else if (funct3 == 0x3) {
+				name = "sltiu"
+		   }
+		   if(opcode === parseInt("1100111", 2)){
+			  name = "jalr"
+		   }
+
 			return { name, type: "I-Type", opcode, funct3, rs1, imm, rd }
 		}
 		case parseInt("0000011", 2): { // Load instructions (I-Type)
@@ -94,7 +112,6 @@ export function decodeInstruction(instruction: number): InstructionMeta {
 			} else if (funct3 == 0x4) {
 				name = "lbu"
 			} else if (funct3 == 0x5) {
-
 				name = "lhu"
 			}
 			return { name, type: "I-Type", opcode, funct3, rs1, imm, rd }
@@ -135,23 +152,26 @@ export function decodeInstruction(instruction: number): InstructionMeta {
 			else if (funct3 == 0x1) name = "bne"
 			else if (funct3 == 0x4) name = "blt"
 			else if (funct3 == 0x5) name = "bge"
+		   else if (funct3 == 0x6) name = "bltu"
+		   else if (funct3 == 0x7) name = "bgeu"
 
 			return { name, type: "B-Type", opcode, funct3, rs1, rs2, imm }
 		}
 
-		case parseInt("1101111", 2): { // J-Type
-		  rd = ( instruction >> 7 ) &0x4;
-        
+	  case parseInt("1101111", 2): { // J-Type jal
 
+			rd = (instruction >>> 7) & 0x1F;
+		  let imm19_12 = (instruction >> 12 ) & 0xFF;
+		  let imm11 = (instruction >> 20 ) & 0x1;
+		  let imm10_1 = (instruction >> 21 ) & 0x3FF;
+		  let imm20 = (instruction >> 31 ) & 0x1;
 
-
-	 	  break;
+		  imm = (imm20 << 20) | (imm19_12 << 12) | (imm11 << 11) | (imm10_1 << 1);
+		  // sign extension
+		  imm = (imm << 11) >> 11; // imm is 32 bits but we have only 21 bits used
+		  return { name: "jal", type: "J-Type", opcode, rd, imm };
 		}
 
-		case parseInt("1100111", 2): { // J-Type
-		    alert("J-Type instruction decoding not implemented yet.");  
-			 break;
-		}
 		default:
 			return { name: "unknown", type: "unknown", opcode: opcode };
 
