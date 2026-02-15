@@ -347,3 +347,10 @@ select {
   color: var(--accent-main);
   font-weight: 600;
 }
+
+.code-inline{
+  padding:0.1rem 0.3rem;
+  color:var(--tok-num);
+  font-weight: bold;
+  margin-left:1rem;
+}

@@ -23,7 +23,7 @@ export const highlight = (editor: HTMLElement) => {
   )
   // Instructions
   code = code.replace(
-    /\b(addi?|sub|mul|div|lw|sw|lb|sb|lh|sh|beq|bne|blt|bge|jal|jalr|lui|slli|auipc|ecall|ebreak)\b/gi,
+    /\b(addi?|sub|mul|div|lw|sw|lb|sb|lh|sh|beq|bne|blt|bge|jal|jalr|lui|slli|auipc|ecall|ebreak|li|mv|j|jr|nop|ret)\b/gi,
     `<span class="tok-inst">$1</span>`
   )
   // Numbers (decimal + hex)

@@ -34,6 +34,7 @@ let lastChnagedMemory = state(-2)
 let isEditingRegistor = state(false)
 
 
+
 const registerToedit = state(0)
 const registerEditDialog = dialogBox({
 	title: "Edit Register",
@@ -55,6 +56,14 @@ const registerEditDialog = dialogBox({
 		)
 
 	}
+})
+
+
+const guideDialog = dialogBox({
+	 title: "Assembly Reference",
+	 message : "This table provides a reference for RISC-V assembly instructions, detailing their syntax, description, and usage examples. It serves as a quick guide for programmers to understand and utilize various RISC-V instructions effectively.",
+	 isOpen: isHelperOpen,
+	  component: () => div( guideTable(), registerDescription())
 })
 
 
@@ -108,13 +117,14 @@ div({ class: "container" },
 			),
 		codearea(),
 		instructionCurrent(currentInstruction),
-		p(a("click here", { href: "#" }).on("click", () => isHelperOpen.value = !isHelperOpen.value), () => isHelperOpen.value ? " to hide" : " to show", " assembly refrence")
-		, guideTable().showIf(isHelperOpen)
-		, registerDescription().showIf(isHelperOpen),
-		instructionViewer(assembly).showIf(() => assembly.value.length > 0),
+		p(button("click here", { href: "#" }).on("click", () => isHelperOpen.value = !isHelperOpen.value), () => isHelperOpen.value ? " to hide" : " to show", " assembly refrence")
+	//	, guideTable().showIf(isHelperOpen)
+	//	, registerDescription().showIf(isHelperOpen),
+		,instructionViewer(assembly).showIf(() => assembly.value.length > 0),
 
 	),
-  registerEditDialog
+  registerEditDialog,
+  guideDialog
 )).addTo(document.querySelector("#app")!)
 
 

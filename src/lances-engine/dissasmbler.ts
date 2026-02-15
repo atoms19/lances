@@ -1,6 +1,3 @@
-
-
-
 export interface InstructionMeta {
 	name: string;
 	type: string;
@@ -170,6 +167,15 @@ export function decodeInstruction(instruction: number): InstructionMeta {
 		  // sign extension
 		  imm = (imm << 11) >> 11; // imm is 32 bits but we have only 21 bits used
 		  return { name: "jal", type: "J-Type", opcode, rd, imm };
+		}
+
+		case parseInt("0110111", 2): // U-Type LUI
+		case parseInt("0010111", 2): { // U-Type AUIPC
+				  rd = (instruction >>> 7) & 0x1F;
+				  imm = instruction & 0xFFFFF000; // upper 20 bits
+				  opcode = instruction & 0x7F;
+				 let name = opcode === parseInt("0110111", 2) ? "lui" : "auipc";
+				  return { name, type: "U-Type", opcode, rd, imm };
 		}
 
 		default:

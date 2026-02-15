@@ -39,7 +39,20 @@ export function getAbiRegisterName(registerNumber: number): string {
 		9: "s1",
 	}
 	if (registerNumber in registerMap) return registerMap[registerNumber];
-	   return ""
+	if (registerNumber >= 16 && registerNumber <= 27) {
+		  return "s" + (registerNumber - 16).toString();
+	 }
+	 if (registerNumber >= 5 && registerNumber <= 7) {
+		  return "t" + (registerNumber - 5).toString();
+	 }
+	 if (registerNumber >= 28 && registerNumber <= 31) {
+		  return "t" + (registerNumber - 28 + 3).toString();
+	 }
+	 if (registerNumber >= 10 && registerNumber <= 17) {
+		  return "a" + (registerNumber - 10).toString();
+	 }
+
+   return ""
 }
 
 
@@ -335,10 +348,7 @@ function epreAssembler(instructions: string[]): string[] {
 
         if (inst.endsWith(":")) {
             labelMap.set(inst.slice(0, -1), pc);
-        }else if(tokenize(inst)[0] === "la"){
-						pc += 8; // 'la' expands to 2 instructions
-		  }
-		  else {
+        } else {
             pc += 4; // 4 bytes per instruction
         }
     }
@@ -359,18 +369,15 @@ function epreAssembler(instructions: string[]): string[] {
                 inst = inst.replace(regex, imm.toString());
             }
         }
-		  if(tokenize(inst)[0] === "la"){
-							 pc += 8; // 'la' expands to 2 instructions
-		}else{
+
         pc += 4;
-		}
         return inst;
     });
 }
 
 
 function pseudoInstructionParser(instructionSet : string[]): string[] {
-   return instructionSet.flatMap((instruction) => {
+   return instructionSet.map((instruction) => {
 	   if (instruction.trim() === "" || instruction.startsWith("#") || instruction.endsWith(":")) {
 		   return instruction;
 	   }
@@ -396,10 +403,9 @@ function pseudoInstructionParser(instructionSet : string[]): string[] {
 			 return `addi x0, x0, 0`
 		  }
 		  case "la":{
-				let ladr = parseInt(parts[2]);
+				let ladr = parts[2];
 				let upper20 = (ladr + 0x800) >> 12;
 				let lower12 = ladr & 0xFFF;
-				return [`lui ${parts[1]}, ${upper20}`,`addi ${parts[1]}, ${parts[1]}, ${lower12}`]
 
 		  }
 

@@ -63,6 +63,10 @@ export class Simulator {
 			     return ((val1 | 0) < (imm! | 0)) ? 1 : 0;
 			case "sltiu":
 			     return (val1 < imm!) ? 1 : 0;
+			case "lui":
+					 return imm!;
+			case "auipc":
+					 return (this.pc + (imm!<<12)) >>> 0;
 			case "sb": {
 				return this.dataMemory.writeByte(val1 + imm!, val2 & 0xFF), 0;
 			}
@@ -169,6 +173,7 @@ export class Simulator {
 		}
 
 		let result = this.ALUExecute(decoded.name, val1, val2, decoded.imm!);
+		
 		if (resultDest !== undefined) {
 			this.registers.writeRegister(resultDest, result);
 		}
