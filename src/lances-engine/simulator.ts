@@ -1,7 +1,9 @@
 import { Memory } from "./Memory";
 import { RegisterFile } from "./registerFile";
 import { decodeInstruction, type InstructionMeta } from "./dissasmbler";
-import { currentInstruction } from "../main";
+import { currentInstruction, instructionAddress } from "../main";
+
+
 
 
 
@@ -197,6 +199,7 @@ export class Simulator {
 		}
 		console.log("PC:", this.pc, "Instruction:", ins.toString(16).padStart(8, '0'), decoded);
 		currentInstruction.value = decoded;
+		instructionAddress.value = this.pc;
 		this.executeInstruction(decoded);
 	}
 

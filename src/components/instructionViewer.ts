@@ -26,9 +26,10 @@ export function instructionViewer(assembly) {
 	)
 }
 
-export function instructionCurrent(instruction) {
+export function instructionCurrent(instructionAddress,instruction) {
 	return (table(
 		tr(
+		   th('Address'),
 			th("Instruction"),
 			th("Type"),
 			th("Opcode"),
@@ -41,6 +42,7 @@ export function instructionCurrent(instruction) {
 		),
 		tbody(
 			tr(
+			   td(()=> "0x" + instructionAddress.value.toString(16).padStart(8, '0')),
 				td(()=>instruction.value.name)
 				, td(()=>instruction.value.type.substring(0,1))
 				, td(()=>instruction.value.opcode?.toString(2).padStart(7, '0'))

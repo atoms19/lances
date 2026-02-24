@@ -354,3 +354,10 @@ select {
   font-weight: bold;
   margin-left:1rem;
 }
+
+.selectbtn select {
+  margin-right: 0rem;
+}
+.selectbtn button{
+  margin-left: 0rem;
+}
