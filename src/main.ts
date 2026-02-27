@@ -11,6 +11,7 @@ import { memoryTable } from "./components/memoryTable"
 import { dialogBox } from "./components/dialogbox"
 import { navbar } from "./components/navbar"
 import { examples } from "./examples"
+import { Memory } from "./lances-engine/Memory"
 
 const Program = state("")
 const assembly = state(new Uint32Array())
@@ -29,17 +30,26 @@ let registerStates = state(new Uint32Array(32))
 let jar;
 // const instMemory = new InstructionMemory();
 let sp = state(0)
+let memory = new Memory(4 * 1024)
+
+let lastChnagedMemory = state(-2)
 let memoryStates = state(new Uint8Array(4 * 1024)) // 64KB of memory
+
+memory.registerOnUpdate((address: number, value: number) => {
+			memoryStates.value[address] = value
+			lastChnagedMemory.value = address
+			memoryStates.value = [...memoryStates.value]
+		})
+
 const loadProgramToMemory = () => {
    if(choosenProgram.value != 'default'){
 		  Program.value = examples[choosenProgram.value]
 		  jar.updateCode(Program.value)
 	}
-	let code = Assembler(Program.value)
+	let code = Assembler(Program.value,memory)
 	assembly.value = code
 }
 let lastChangedRegister = state(-1)
-let lastChnagedMemory = state(-2)
 let isEditingRegistor = state(false)
 let choosenProgram = state('default')
 
@@ -78,7 +88,8 @@ const guideDialog = dialogBox({
 const simulateRISC = () => {
 	sim = new Simulator();
 	registerStates.value = new Uint32Array(32)
-	memoryStates.value = new Uint8Array(4 * 1024)
+//	memoryStates.value = new Uint8Array(4 * 1024)
+	sim.dataMemory = memory
 	lastChangedRegister.value = -1
 	lastChnagedMemory.value = -2
 	currentInstruction.value = {
@@ -94,12 +105,7 @@ const simulateRISC = () => {
 			lastChangedRegister.value = index
 			registerStates.value = [...registerStates.value]
 		})
-		sim.dataMemory.registerOnUpdate((address: number, value: number) => {
-			memoryStates.value[address] = value
-			lastChnagedMemory.value = address
-			memoryStates.value = [...memoryStates.value]
-		})
-	}, 1000)
+			}, 1000)
 	console.log("Program loaded into instruction memory.")
 }
 
@@ -119,10 +125,9 @@ div(
 
 			 div({class:'selectbtn'},
 				select(
-				   option("load examples", {  value : 'default' }),
-					option("factorial",{value : 'factorial'}),
-					option("fibonacci",{value : 'fibonacci'}),
-				).model(choosenProgram),
+
+				  Object.keys(examples).map(key => option(key, { value: key }))
+				  ).model(choosenProgram),
 				button("LOAD PROGRAM").on("click", loadProgramToMemory)), button("SIMULATE").on("click", simulateRISC)
 
 				, div(button("Step").on("click", () => sim.stepForward())),

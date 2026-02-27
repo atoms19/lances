@@ -16,7 +16,7 @@ export class Simulator {
 	constructor() {
 		this.pc = 0;
 		console.log("Simulator initialized. PC set to 0.");
-		this.dataMemory = new Memory(1024 * 4); //4KB data memory
+		// this.dataMemory = new Memory(1024 * 4); //4KB data memory
 		this.registers = new RegisterFile();
 	}
 
@@ -200,6 +200,7 @@ export class Simulator {
 		console.log("PC:", this.pc, "Instruction:", ins.toString(16).padStart(8, '0'), decoded);
 		currentInstruction.value = decoded;
 		instructionAddress.value = this.pc;
+
 		this.executeInstruction(decoded);
 	}
 

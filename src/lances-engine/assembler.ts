@@ -1,4 +1,6 @@
- function abiRegisterDecoder(register: string) {
+import type { Memory } from "./Memory";
+
+function abiRegisterDecoder(register: string) {
 	let registerMap = {
 		"zero": "0",
 		"ra": "1",
@@ -29,7 +31,7 @@
 }
 
 export function getAbiRegisterName(registerNumber: number): string {
-	 let registerMap = {
+	let registerMap = {
 		0: "zero",
 		1: "ra",
 		2: "sp",
@@ -39,7 +41,7 @@ export function getAbiRegisterName(registerNumber: number): string {
 		9: "s1",
 	}
 	if (registerNumber in registerMap) return registerMap[registerNumber];
-	   return ""
+	return ""
 }
 
 
@@ -66,27 +68,27 @@ function getFunct3(operation: string): number {
 			return 0x2;
 		case "sltu":
 		case "sltiu":
-		   return 0x3;
+			return 0x3;
 		case "lbu":
 		case "lhu":
 		case "xori":
 		case "xor":
 		case "blt":
-			return 0x4; 
+			return 0x4;
 		case "bge":
 		case "srl":
 		case "srli":
 		case "srai":
 		case "sra":
-			return 0x5; 
+			return 0x5;
 		case "andi":
 		case "and":
 		case "bgeu":
-			return  0x7;
+			return 0x7;
 		case "ori":
 		case "or":
 		case "bltu":
-			return 0x6; 
+			return 0x6;
 		default:
 			return 0;
 	}
@@ -129,8 +131,8 @@ function convertInstructionToBytes(instruction: string): Uint32Array {
 			case "and":
 			case "or":
 			case "xor":
-		   case "sll":
-		   case "srl":
+			case "sll":
+			case "srl":
 			case "sra":
 			case "slt":
 			case "sltu":
@@ -260,14 +262,14 @@ function convertInstructionToBytes(instruction: string): Uint32Array {
 				break
 			}
 			case "lui":
-			case "auipc":{
-		     // U-Type instruction
-		  rd = parseInt(abiRegisterDecoder(parts[1]))
-		  imm = parseInt(parts[2])
-		  opcode = operation === "lui" ? parseInt("0110111", 2) : parseInt("0010111", 2)
-        word[0] = (imm << 12) | (rd << 7) | opcode;
-		  break 
-		  
+			case "auipc": {
+				// U-Type instruction
+				rd = parseInt(abiRegisterDecoder(parts[1]))
+				imm = parseInt(parts[2])
+				opcode = operation === "lui" ? parseInt("0110111", 2) : parseInt("0010111", 2)
+				word[0] = (imm << 12) | (rd << 7) | opcode;
+				break
+
 			}
 
 
@@ -300,7 +302,7 @@ function preAssembler(instructions: string[]): string[] {
 
 	let ioffset = 0;
 	instructions.forEach((instruction, i) => {
-	  instruction = instruction.trim();
+		instruction = instruction.trim();
 		for (let entry of LabelMaps.keys()) {
 			if (instruction.endsWith(entry) && !instructions.includes(':')) {
 				const regex = new RegExp(`\\b${entry}\\b`, "g");
@@ -315,117 +317,180 @@ function preAssembler(instructions: string[]): string[] {
 		}
 	})
 
-   
-
 	return instructions;
 
 }
 
-
-
-
-function epreAssembler(instructions: string[]): string[] {
-    const labelMap = new Map<string, number>();
-
-    // ---------- PASS 1: collect labels (BYTE PC) ----------
-    let pc = 0;
-    for (const line of instructions) {
-        const inst = line.trim();
-        if (inst === "" || inst.startsWith("#")) continue;
-
-        if (inst.endsWith(":")) {
-            labelMap.set(inst.slice(0, -1), pc);
-        }else if(tokenize(inst)[0] === "la"){
-						pc += 8; // 'la' expands to 2 instructions
-		  }
-		  else {
-            pc += 4; // 4 bytes per instruction
-        }
-    }
-
-    // ---------- PASS 2: replace labels ----------
-    pc = 0;
-    return instructions.map((line) => {
-        let inst = line.trim();
-        if (inst === "" || inst.startsWith("#") || inst.endsWith(":")) {
-            return line;
-        }
-
-        for (const [label, labelPC] of labelMap) {
-            const regex = new RegExp(`\\b${label}\\b`);
-            if (regex.test(inst)) {
-                const offsetBytes = labelPC - pc;
-                const imm = offsetBytes; // B-type rule
-                inst = inst.replace(regex, imm.toString());
-            }
-        }
-		  if(tokenize(inst)[0] === "la"){
-							 pc += 8; // 'la' expands to 2 instructions
-		}else{
-        pc += 4;
+function handleDataInstruction(instruction: string[],adr:number,memory: Memory): number {
+	let directive = instruction[1];
+	let offsetLength = 0;
+	switch (directive) {
+		case "word": {
+			for( let i = 2; i < instruction.length; i++) {
+			memory.writeWord(adr,parseInt(instruction[i]))
+			 adr += 4;
+			 offsetLength += 4;
+			}
+			console.log("MEMORY MEMORY",memory.memory)
+			break;
 		}
-        return inst;
-    });
-}
-
-
-function pseudoInstructionParser(instructionSet : string[]): string[] {
-   return instructionSet.flatMap((instruction) => {
-	   if (instruction.trim() === "" || instruction.startsWith("#") || instruction.endsWith(":")) {
-		   return instruction;
-	   }
-		let parts: RegExpMatchArray = tokenize(instruction.trim());
-		if (parts.length === 0) return instruction;
-		switch (parts[0]) {
-		  case "mv":{
-				return `addi ${parts[1]}, ${parts[2]}, 0`
-		  }
-		  case "li":{
-			 return `addi ${parts[1]}, zero, ${parts[2]}`
-		  }
-		  case "j":{
-			 return `jal zero, ${parts[1]}`
-		  }
-		  case "jr":{
-				return `jalr x0, 0(${parts[1]})`
-		  }
-		  case "ret":{
-				return `jalr x0, 0(x1)`
-		  }
-		  case "nop":{
-			 return `addi x0, x0, 0`
-		  }
-		  case "la":{
-				let ladr = parseInt(parts[2]);
-				let upper20 = (ladr + 0x800) >> 12;
-				let lower12 = ladr & 0xFFF;
-				return [`lui ${parts[1]}, ${upper20}`,`addi ${parts[1]}, ${parts[1]}, ${lower12}`]
-
-		  }
-
-
-		  default:{
-			 return instruction;
-		  }
-		}		 
-
-
-	 })
-
-}
-
-export function Assembler(instructions: string) {
-	let instructionSet = instructions.split("\n");
-	instructionSet = pseudoInstructionParser(epreAssembler(instructionSet))
-	let bytecode: Uint32Array = new Uint32Array(instructionSet.length);
-	let c = 0;
-	for (let instruction of instructionSet) {
-		if (instruction.trim() !== "" && !instruction.startsWith("#") && !instruction.includes(':')) {
-			const [byteInstruction] = convertInstructionToBytes(instruction.trim());
-			bytecode[c++] = byteInstruction;
+		case "half": {
+		   for(let i = 2 ; i < instruction.length; i++) {
+			memory.writeHalf(adr,parseInt(instruction[2]));
+			 adr += 2;
+			 offsetLength += 2;
+		   }
+			break;
 		}
+		case "byte": {
+		  for ( let i = 2; i < instruction.length; i++) {
+		   memory.writeByte(adr,parseInt(instruction[2]));
+			 adr += 1;
+			 offsetLength += 1;
+		  }
+			break;
+		}
+	 	case "asciiz": {
+		  offsetLength = instruction.slice(2).join(" ").length + 1; // +1 for null terminator  
+		}
+	 }
+
+    
+
+	 return offsetLength; 
+
+
 	}
 
 
-	return bytecode.subarray(0, c);
-}
+
+
+	function epreAssembler(instructions: string[], memory : Memory): string[] {
+		const labelMap = new Map<string, number[]>();
+		let mode = "text";
+		let pc = 0;
+		let storageStart = 0x0000000; // Starting address for .data section
+		for (const line of instructions) {
+			const inst = line.trim();
+			if (inst === "" || inst.startsWith("#")) continue;
+
+			if ((mode == 'data' && inst.includes(":")) || inst.endsWith(':') || inst === ".data" || inst === ".text") {
+
+				let labelName = inst.slice(0, -1);
+
+				if (inst.startsWith(".text")) {
+					mode = "text";
+					console.log('mode switched to text');
+				}
+				else if (inst.startsWith(".data")) {
+					mode = "data";
+					console.log('mode switched to data');
+				} else if (mode === "text") {
+					labelMap.set(inst.slice(0, -1), [0,pc]);
+				} else if (mode === "data") {
+					console.log('encounered data label ', labelName)
+					let dataInst = tokenize(inst)
+					let locationOffset = handleDataInstruction(dataInst,storageStart,memory);
+					console.log("data instructions ", dataInst)
+					labelMap.set(labelName.slice(0,labelName.lastIndexOf(':')), [1,storageStart]);
+					storageStart += locationOffset;
+				}
+
+
+			} else if (tokenize(inst)[0] === "la") {
+				pc += 8; // 'la' expands to 2 instructions
+			}
+			else {
+				pc += 4; // 4 bytes per instruction
+			}
+		}
+
+		console.log("LABELS : ", labelMap.keys())
+
+		pc = 0;
+
+
+		return instructions.map((line) => {
+			let inst = line.trim();
+			if (inst === "" || inst.startsWith("#") || inst.endsWith(":") || inst.startsWith('.')) {
+				return line;
+			}
+
+			for (const [label, [mode,labelPC]] of labelMap) {
+				const regex = new RegExp(`\\b${label}\\b`);
+				if (regex.test(inst)) {
+				   console.log(`Resolving label ${label} in instruction: ${inst} and ${labelPC} and mode ${mode}`); 
+					const offsetBytes = mode ? labelPC : labelPC - pc;
+					const imm = offsetBytes; // B-type rule
+					inst = inst.replace(regex, imm.toString()+(!mode ? "" : " (0)"));
+				}
+			}
+			if (tokenize(inst)[0] === "la") {
+				pc += 8; // 'la' expands to 2 instructions
+			} else {
+				pc += 4;
+			}
+			return inst;
+		});
+	}
+
+
+	function pseudoInstructionParser(instructionSet: string[]): string[] {
+		return instructionSet.flatMap((instruction) => {
+			if (instruction.trim() === "" || instruction.startsWith("#") || instruction.endsWith(":")) {
+				return instruction;
+			}
+			let parts: RegExpMatchArray = tokenize(instruction.trim());
+			if (parts.length === 0) return instruction;
+			switch (parts[0]) {
+				case "mv": {
+					return `addi ${parts[1]}, ${parts[2]}, 0`
+				}
+				case "li": {
+					return `addi ${parts[1]}, zero, ${parts[2]}`
+				}
+				case "j": {
+					return `jal zero, ${parts[1]}`
+				}
+				case "jr": {
+					return `jalr x0, 0(${parts[1]})`
+				}
+				case "ret": {
+					return `jalr x0, 0(x1)`
+				}
+				case "nop": {
+					return `addi x0, x0, 0`
+				}
+				case "la": {
+					let ladr = parseInt(parts[2]);
+					let upper20 = (ladr + 0x800) >> 12;
+					let lower12 = ladr & 0xFFF;
+					return [`lui ${parts[1]}, ${upper20}`, `addi ${parts[1]}, ${parts[1]}, ${lower12}`]
+
+				}
+				default: {
+					return instruction;
+				}
+			}
+
+
+		})
+
+	}
+
+	export function Assembler(instructions: string, memory : Memory) {
+		let instructionSet = instructions.split("\n");
+		instructionSet = pseudoInstructionParser(epreAssembler(instructionSet,memory))
+		let bytecode: Uint32Array = new Uint32Array(instructionSet.length);
+		let c = 0;
+		for (let instruction of instructionSet) {
+		  instruction=instruction.trimStart().trim();
+			if (instruction.trim() !== "" && !instruction.startsWith("#") && !instruction.includes(':') && !instruction.trim().startsWith('.')) {
+				const [byteInstruction] = convertInstructionToBytes(instruction.trim());
+				bytecode[c++] = byteInstruction;
+			}
+		}
+
+
+		return bytecode.subarray(0, c);
+	}
