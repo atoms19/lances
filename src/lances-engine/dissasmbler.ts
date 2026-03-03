@@ -55,6 +55,19 @@ export function decodeInstruction(instruction: number): InstructionMeta {
 			return { name: name, type: "R-Type", opcode, funct3, funct7, rs1, rs2, rd };
 		}
 
+		case parseInt("1110011", 2): { // SYSTEM instructions (ECALL, EBREAK)
+				  funct3 = (instruction >>> 12) & 0x7;
+				  if (funct3 === 0x0) {
+					  if (instruction === 0x00000073) {
+						  return { name: "ecall", type: "SYSTEM", opcode, funct3 };
+					  } else if (instruction === 0x00100073) {
+						  return { name: "ebreak", type: "SYSTEM", opcode, funct3 };
+					  }
+				  }
+				  return { name: "unknown SYSTEM", type: "SYSTEM", opcode, funct3 };
+		}
+
+
 		case parseInt("1100111", 2):  // I-Type jalr
 		case parseInt("0010011", 2): { //I-Type
 			rd = (instruction >>> 7) & 0x1F;

@@ -16,7 +16,6 @@ export class Simulator {
 	constructor() {
 		this.pc = 0;
 		console.log("Simulator initialized. PC set to 0.");
-		// this.dataMemory = new Memory(1024 * 4); //4KB data memory
 		this.registers = new RegisterFile();
 	}
 
@@ -144,8 +143,35 @@ export class Simulator {
 	   this.registers.writeRegister( decoded.rd!, this.pc + 4);
 		this.pc = ( this.registers.readRegister( decoded.rs1! ) + decoded.imm! ) & ~1;
 	 }
-   
+   handleSystemInstruction(decoded: InstructionMeta) {
+	   if(decoded.name == "ecall"){
+		    let callCode = this.registers.readRegister(17); // a7 holds the syscall code
+			 let arg0 = this.registers.readRegister(10); // a0
+          switch(callCode) {
+				  case 1:{
+				   alert("ECALL: Print Integer =>"+ arg0);	
+					break
+				  }
+				  case 4:{
+					 let str = this.dataMemory.readStringFrom(arg0);
+					 alert("ECALL: Print String =>"+ str);
+					 break;
+				  }
+				  case 5:{
+					 let input = prompt("ECALL: Read Integer =>");
+					 let intValue = parseInt(input!);
+					 if(!isNaN(intValue)){
+						this.registers.writeRegister(10, intValue); // return value in a0
+					 }
+					 break;
+				  }  
+			 }
 
+		}
+		this.pc += 4; // move to next instruction after ecall
+
+
+    }	
 
 	executeInstruction(decoded: InstructionMeta) {
 	   console.log("the current line ",this.pc);
@@ -160,6 +186,10 @@ export class Simulator {
 			resultDest = decoded.rd;
 		}
 		console.log("Executing instruction:", decoded.type);
+		if(decoded.type == "SYSTEM") {
+				this.handleSystemInstruction(decoded);
+				return
+		}
 		if (decoded.type == "B-Type") {
 		  console.log("Executing branch instruction");
 			this.decodeBranchedInstruction(decoded);

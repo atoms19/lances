@@ -23,12 +23,13 @@ export const currentInstruction = state({
 	opcode: 0,
 })
 
+
+
 export let instructionAddress = state(0)
 
 let sim: Simulator;
 let registerStates = state(new Uint32Array(32))
-let jar;
-// const instMemory = new InstructionMemory();
+let jar; 
 let sp = state(0)
 let memory = new Memory(4 * 1024)
 

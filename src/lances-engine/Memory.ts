@@ -54,6 +54,18 @@ export class Memory {
 		const byte4= this.readByte(address + 3);
 		return (byte4 << 24) | (byte3 << 16) |  (byte2 << 8) | byte1;
 	 }
+	 readStringFrom(address:number):string {
+		let str = "";
+		let currentByte = this.readByte(address);
+		console.log("Reading string from address", address);
+		while (currentByte !== 0) { // null-terminated string
+				  str += String.fromCharCode(currentByte);
+				  console.log("Read byte", currentByte, "from address", address);
+				  address++;
+				  currentByte = this.readByte(address);
+		}
+		return str;
+	 }
 
 	 
 	 registerOnUpdate(callback:(address: number, value: number) => void):void {

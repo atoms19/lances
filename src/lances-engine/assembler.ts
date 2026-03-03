@@ -167,6 +167,13 @@ function convertInstructionToBytes(instruction: string): Uint32Array {
 					word[0] = imm << 20 | rs1 << 15 | funct3 << 12 | rd << 7 | opcode;
 					break;
 				}
+         case "ecall":
+		   case "ebreak":{
+				opcode = parseInt("1110011", 2);	
+				imm = (parts[0] === "ebreak") ? 1 : 0;
+				word[0] = imm << 20 | opcode;
+ 				break;
+			}
 			case "lw":
 			case "lh":
 			case "lb":
@@ -280,7 +287,8 @@ function convertInstructionToBytes(instruction: string): Uint32Array {
 }
 
 const tokenize = (line: string) => {
-	return line.match(/-?\w+/g);
+	return line.match(/-?\.?\w+/g);
+
 };
 
 
@@ -325,7 +333,7 @@ function handleDataInstruction(instruction: string[],adr:number,memory: Memory):
 	let directive = instruction[1];
 	let offsetLength = 0;
 	switch (directive) {
-		case "word": {
+		case ".word": {
 			for( let i = 2; i < instruction.length; i++) {
 			memory.writeWord(adr,parseInt(instruction[i]))
 			 adr += 4;
@@ -334,7 +342,7 @@ function handleDataInstruction(instruction: string[],adr:number,memory: Memory):
 			console.log("MEMORY MEMORY",memory.memory)
 			break;
 		}
-		case "half": {
+		case ".half": {
 		   for(let i = 2 ; i < instruction.length; i++) {
 			memory.writeHalf(adr,parseInt(instruction[2]));
 			 adr += 2;
@@ -342,7 +350,7 @@ function handleDataInstruction(instruction: string[],adr:number,memory: Memory):
 		   }
 			break;
 		}
-		case "byte": {
+		case ".byte": {
 		  for ( let i = 2; i < instruction.length; i++) {
 		   memory.writeByte(adr,parseInt(instruction[2]));
 			 adr += 1;
@@ -350,10 +358,37 @@ function handleDataInstruction(instruction: string[],adr:number,memory: Memory):
 		  }
 			break;
 		}
-	 	case "asciiz": {
+		case ".string":
+	 	case ".asciiz": {
+		  console.log("RECIEVED STRING ", instruction)
+		  let recievedString = instruction.slice(2).join(" ");
+		  for (let i = 0; i < recievedString.length; i++) {
+			memory.writeByte(adr, recievedString.charCodeAt(i));
+			adr += 1;
+		  }
 		  offsetLength = instruction.slice(2).join(" ").length + 1; // +1 for null terminator  
+		  memory.writeByte(adr, 0); // null terminator
+			 break;
 		}
+		case ".ascii": {
+		  let recievedString = instruction.slice(2).join(" ");
+		  for (let i = 0; i < recievedString.length; i++) {
+			memory.writeByte(adr, recievedString.charCodeAt(i));
+			adr += 1;
+		  }
+		  offsetLength = instruction.slice(2).join(" ").length; // no null terminator  
+		  break;
+		}
+		case ".space": {
+		  let spaceSize = parseInt(instruction[2]);
+		  for (let i = 0; i < spaceSize; i++) {
+			memory.writeByte(adr, 0);
+			adr += 1;
+		  }
+		  offsetLength = spaceSize;
+		  break;
 	 }
+  }
 
     
 
