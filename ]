@@ -1,0 +1,26 @@
+import { div, table, thead, th ,td,h3} from "dominity";
+
+
+export default function cacheTable(cacheState:any) {
+
+	return div({ class: "" },
+		h3("Cache Table"),
+		table(
+			 thead(
+				th("valid"),
+				th("dirty"),
+				th("tag"),
+				th("block offset"),
+				th("word offset"),
+				th("byte offset"),
+				th("data")
+			 ),
+			 tbody(
+
+
+			 )
+		)
+	)
+
+}
+

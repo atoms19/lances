@@ -25,6 +25,21 @@ lw x1, key
 la x3,key
 addi x3,x0, 4
 lw x2, 0(x3)
+`,
+"system calls":`.data
+number: .word 10
+test_string:.asciiz "hello world"
+.text
+la a0, test_string  # load string address
+addi a7, x0, 4       # print string syscall code
+ecall
+la t0, number       # load number address
+lw t1, 0(t0)
+addi a7, x0, 5       # read int syscall code
+ecall
+add a0, a0, t1
+addi a7, x0, 1       # print int syscall code
+ecall
 `
 
 }

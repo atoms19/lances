@@ -12,6 +12,8 @@ import { dialogBox } from "./components/dialogbox"
 import { navbar } from "./components/navbar"
 import { examples } from "./examples"
 import { Memory } from "./lances-engine/Memory"
+import cacheTable from "./components/cacheTable"
+import Cache from "./lances-engine/Cache"
 
 const Program = state("")
 const assembly = state(new Uint32Array())
@@ -24,17 +26,29 @@ export const currentInstruction = state({
 })
 
 
-
 export let instructionAddress = state(0)
 
 let sim: Simulator;
 let registerStates = state(new Uint32Array(32))
 let jar; 
-let sp = state(0)
-let memory = new Memory(4 * 1024)
+let sp = state(0);
+let cache = new Cache(16, 4) // block size of 16 bytes and 4 blocks total (64 bytes cache)
 
+let memory = new Memory(4 * 1024,cache)
+let lastChangedCache = state(-1)
 let lastChnagedMemory = state(-2)
 let memoryStates = state(new Uint8Array(4 * 1024)) // 64KB of memory
+let cacheState =state(cache.data)
+let hits = state(0)
+let misses = state(0)
+cache.onUpdate =(data:any,id:number,extra:{hits:number,misses:number}) =>{
+	cacheState.value = [...data]
+	lastChangedCache.value = id 
+	hits.value = extra.hits
+	misses.value = extra.misses
+
+
+}
 
 memory.registerOnUpdate((address: number, value: number) => {
 			memoryStates.value[address] = value
@@ -118,6 +132,7 @@ div(
 			registerTable(registerStates, lastChangedRegister),
 			h3("memory view ")
 			, memoryTable(memoryStates, sp, lastChnagedMemory)
+		   ,cacheTable(cacheState,lastChangedCache)
 		),
 		div(
 			h1("Welcome to Lances!"),
@@ -132,6 +147,7 @@ div(
 				button("LOAD PROGRAM").on("click", loadProgramToMemory)), button("SIMULATE").on("click", simulateRISC)
 
 				, div(button("Step").on("click", () => sim.stepForward())),
+			   div(button("Run").on("click", () => sim.run()))
 			),
 			codearea(),
 			instructionCurrent(instructionAddress,currentInstruction),

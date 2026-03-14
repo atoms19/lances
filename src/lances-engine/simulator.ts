@@ -234,5 +234,16 @@ export class Simulator {
 		this.executeInstruction(decoded);
 	}
 
+	run(){
+
+	  let interval = setInterval(() => {
+				if (this.pc >= this.instructionMemory.length * 4) {
+				   clearInterval(interval);
+					console.log("Program execution completed.");
+				}
+				this.stepForward();
+		  }, 500);	
+	}
+
 }
 
