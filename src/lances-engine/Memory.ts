@@ -14,9 +14,9 @@ export class Memory {
 	}
 
 	// byte I/O
-	readByte(address: number): number {
+	readByte(address: number, isCalledFor?:number): number {
 		if (this.cache) {
-			const cacheLine = this.cache.lookup(address);
+			const cacheLine = this.cache.lookup(address,isCalledFor);
 			if (cacheLine) {
 				let blockOffset = address & (this.cache.blockSize - 1);
 				return cacheLine.data[blockOffset];
@@ -38,7 +38,7 @@ export class Memory {
 		}
 		this.memory[address] = value & 0xFF; // masking to 8 bits
 		if(this.cache){ 
-		     let cacheLine = this.cache.lookup(address);
+		     let cacheLine = this.cache.lookup(address,0);
 			  if (cacheLine){
 				let blockOffset = address & (this.cache.blockSize - 1);
 			 	cacheLine.data[blockOffset] = this.memory[address];
@@ -58,8 +58,8 @@ export class Memory {
 	}
 
 	readHalf(address: number): number {
-		const byte1 = this.readByte(address);
-		const byte2 = this.readByte(address + 1);
+		const byte1 = this.readByte(address,2);
+		const byte2 = this.readByte(address + 1,2);
 		return byte2 << 8 | byte1;
 	}
 
@@ -73,10 +73,10 @@ export class Memory {
 	}
 
 	readWord(address: number): number {
-		const byte1 = this.readByte(address);
-		const byte2 = this.readByte(address + 1);
-		const byte3 = this.readByte(address + 2);
-		const byte4 = this.readByte(address + 3);
+		const byte1 = this.readByte(address,4);
+		const byte2 = this.readByte(address + 1,4);
+		const byte3 = this.readByte(address + 2,4);
+		const byte4 = this.readByte(address + 3,4);
 		return (byte4 << 24) | (byte3 << 16) | (byte2 << 8) | byte1;
 	}
 

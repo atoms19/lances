@@ -30,38 +30,36 @@ export let instructionAddress = state(0)
 
 let sim: Simulator;
 let registerStates = state(new Uint32Array(32))
-let jar; 
+let jar;
 let sp = state(0);
-let cache = new Cache(16, 4) // block size of 16 bytes and 4 blocks total (64 bytes cache)
+let cache = new Cache(16, 8) // block size of 16 bytes and 4 blocks total (64 bytes cache)
 
-let memory = new Memory(4 * 1024,cache)
+let memory = new Memory(4 * 1024, cache)
 let lastChangedCache = state(-1)
 let lastChnagedMemory = state(-2)
 let memoryStates = state(new Uint8Array(4 * 1024)) // 64KB of memory
-let cacheState =state(cache.data)
+let cacheState = state(cache.data)
 let hits = state(0)
 let misses = state(0)
-cache.onUpdate =(data:any,id:number,extra:{hits:number,misses:number}) =>{
+cache.onUpdate = (data: any, id: number, extra: { hits: number, misses: number }) => {
 	cacheState.value = [...data]
-	lastChangedCache.value = id 
+	lastChangedCache.value = id
 	hits.value = extra.hits
 	misses.value = extra.misses
-
-
 }
 
 memory.registerOnUpdate((address: number, value: number) => {
-			memoryStates.value[address] = value
-			lastChnagedMemory.value = address
-			memoryStates.value = [...memoryStates.value]
-		})
+	memoryStates.value[address] = value
+	lastChnagedMemory.value = address
+	memoryStates.value = [...memoryStates.value]
+})
 
 const loadProgramToMemory = () => {
-   if(choosenProgram.value != 'default'){
-		  Program.value = examples[choosenProgram.value]
-		  jar.updateCode(Program.value)
+	if (choosenProgram.value != 'default') {
+		Program.value = examples[choosenProgram.value]
+		jar.updateCode(Program.value)
 	}
-	let code = Assembler(Program.value,memory)
+	let code = Assembler(Program.value, memory)
 	assembly.value = code
 }
 let lastChangedRegister = state(-1)
@@ -103,7 +101,7 @@ const guideDialog = dialogBox({
 const simulateRISC = () => {
 	sim = new Simulator();
 	registerStates.value = new Uint32Array(32)
-//	memoryStates.value = new Uint8Array(4 * 1024)
+	//	memoryStates.value = new Uint8Array(4 * 1024)
 	sim.dataMemory = memory
 	lastChangedRegister.value = -1
 	lastChnagedMemory.value = -2
@@ -120,7 +118,7 @@ const simulateRISC = () => {
 			lastChangedRegister.value = index
 			registerStates.value = [...registerStates.value]
 		})
-			}, 1000)
+	}, 1000)
 	console.log("Program loaded into instruction memory.")
 }
 
@@ -132,25 +130,25 @@ div(
 			registerTable(registerStates, lastChangedRegister),
 			h3("memory view ")
 			, memoryTable(memoryStates, sp, lastChnagedMemory)
-		   ,cacheTable(cacheState,lastChangedCache)
+			, cacheTable(cacheState, lastChangedCache),
+			p('Cache Hits: ', hits, ' | Cache Misses: ', misses)
 		),
 		div(
 			h1("Welcome to Lances!"),
 			p("Lances is a RISC V simulator built with TypeScript and Runs in the Browser."),
 			div({ class: "btn-grid" },
+				div({ class: 'selectbtn' },
+					select(
 
-			 div({class:'selectbtn'},
-				select(
-
-				  Object.keys(examples).map(key => option(key, { value: key }))
-				  ).model(choosenProgram),
-				button("LOAD PROGRAM").on("click", loadProgramToMemory)), button("SIMULATE").on("click", simulateRISC)
+						Object.keys(examples).map(key => option(key, { value: key }))
+					).model(choosenProgram),
+					button("LOAD PROGRAM").on("click", loadProgramToMemory)), button("SIMULATE").on("click", simulateRISC)
 
 				, div(button("Step").on("click", () => sim.stepForward())),
-			   div(button("Run").on("click", () => sim.run()))
+				div(button("Run").on("click", () => sim.run()))
 			),
 			codearea(),
-			instructionCurrent(instructionAddress,currentInstruction),
+			instructionCurrent(instructionAddress, currentInstruction),
 			p(button("click here", { href: "#" }).on("click", () => isHelperOpen.value = !isHelperOpen.value), () => isHelperOpen.value ? " to hide" : " to show", " assembly refrence")
 			, instructionViewer(assembly).showIf(() => assembly.value.length > 0),
 
@@ -163,7 +161,7 @@ div(
 
 function codearea() {
 	return div({ class: "code-area dracula" }).withRef((el: HTMLElement) => {
-		 jar = CodeJar(el, withLineNumbers(highlight), { tab: "\t", })
+		jar = CodeJar(el, withLineNumbers(highlight), { tab: "\t", })
 		setTimeout(() => jar.updateCode(`# Write your RISC V code here \n \n \n \n 
  `), 100)
 		jar.onUpdate(code => Program.value = code)
